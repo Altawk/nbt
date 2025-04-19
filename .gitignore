@@ -1,0 +1,14 @@
+.DS_Store
+
+# Kotlin
+.kotlin/
+
+# IntelliJ files
+.idea/
+
+# VSCode files
+.vscode/
+
+# Gradle files
+build/
+.gradle/

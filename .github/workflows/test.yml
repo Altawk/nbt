@@ -1,0 +1,25 @@
+name: Test
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  test:
+    if: contains(github.event.head_commit.message, '[skip]') == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Make Gradle Wrapper Executable
+        run: chmod +x ./gradlew
+      - name: Build And Test
+        run: ./gradlew clean build jvmTest
