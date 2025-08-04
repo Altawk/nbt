@@ -229,6 +229,7 @@ public final class cn/altawk/nbt/tag/NbtCompound : cn/altawk/nbt/tag/NbtTag, jav
 	public fun clear ()V
 	public fun clone ()Lcn/altawk/nbt/tag/NbtCompound;
 	public synthetic fun clone ()Lcn/altawk/nbt/tag/NbtTag;
+	public final fun cloneShallow ()Lcn/altawk/nbt/tag/NbtCompound;
 	public final fun containsKey (Ljava/lang/Object;)Z
 	public fun containsKey (Ljava/lang/String;)Z
 	public fun containsValue (Lcn/altawk/nbt/tag/NbtTag;)Z

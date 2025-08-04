@@ -93,7 +93,7 @@ internal class CharBuffer(private val sequence: CharSequence) {
         this.take()
     }
 
-    fun <T> tempt(action: CharBuffer.() -> T): T {
+    fun <R> tempt(action: CharBuffer.() -> R): R {
         val newBuffer = CharBuffer(sequence)
         newBuffer.index = this.index
         return action(newBuffer)

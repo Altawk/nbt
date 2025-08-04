@@ -1,6 +1,6 @@
 package cn.altawk.nbt.tag
 
-import cn.altawk.nbt.internal.appendNbtString
+import cn.altawk.nbt.internal.appendQuoted
 import kotlinx.serialization.Serializable
 
 /**
@@ -25,7 +25,7 @@ public class NbtString(
     /**
      * Get the string representation of the tag.
      */
-    override fun toString(): String = buildString { appendNbtString(content, true) }
+    override fun toString(): String = buildString { appendQuoted(content) }
 
     /**
      * Check if the tag equals another.

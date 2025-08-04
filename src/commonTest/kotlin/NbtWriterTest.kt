@@ -45,9 +45,6 @@ class NbtWriterTest {
 
         val str = format.encodeToString(serializer, example)
 
-        println(tag)
-        println(str)
-
         assertEquals(str, tag.toString())
     }
 

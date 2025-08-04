@@ -4,7 +4,7 @@ package cn.altawk.nbt.exception
 /**
  * StringifiedNbtParseException
  *
- * An exception thrown when parsing a string tag.
+ * An exception thrown when parsing a tag.
  *
  * @author TheFloodDragon
  * @since 2025/3/15 11:21

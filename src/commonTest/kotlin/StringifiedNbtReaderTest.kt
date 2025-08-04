@@ -9,6 +9,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class StringifiedNbtReaderTest {
+
     private fun check(expected: NbtTag, snbt: String) {
         assertEquals(
             expected = expected,
@@ -29,7 +30,6 @@ class StringifiedNbtReaderTest {
             is NbtString -> assertEquals(expected.content, NbtFormat.decodeFromString(String.serializer(), snbt))
             is NbtCompound -> assertEquals(expected.toMap(), NbtFormat.decodeFromString(MapSerializer(String.serializer(), NbtTag.serializer()), snbt))
             is NbtList -> assertEquals(expected.toList(), NbtFormat.decodeFromString(ListSerializer(NbtTag.serializer()), snbt))
-            else -> error("Unexpected type: ${expected::class}")
         }
     }
 

@@ -27,7 +27,6 @@ import cn.altawk.nbt.tag.*
 
 /**
  * StringifiedNbtReader
- * TODO sync with Minecraft NBT format
  *
  * @since 2025/3/15 11:13
  */

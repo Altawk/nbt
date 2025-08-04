@@ -1,7 +1,7 @@
 package cn.altawk.nbt.tag
 
 import cn.altawk.nbt.internal.Tokens
-import cn.altawk.nbt.internal.appendNbtString
+import cn.altawk.nbt.internal.appendValid
 import kotlinx.serialization.Serializable
 
 /**
@@ -59,8 +59,12 @@ public class NbtCompound(
     /**
      * Clone the tag.
      */
-    public override fun clone(): NbtCompound =
-        NbtCompound().also { new -> this.forEach { new[it.key] = it.value.clone() } }
+    public override fun clone(): NbtCompound = NbtCompound().also { new -> this.forEach { new[it.key] = it.value.clone() } }
+
+    /**
+     * Clone the tag shallowly.
+     */
+    public fun cloneShallow(): NbtCompound = NbtCompound().apply { putAll(this.content) }
 
     /**
      * Get the string representation of the tag.
@@ -68,7 +72,7 @@ public class NbtCompound(
     override fun toString(): String =
         content.entries.joinToString(separator = ",", prefix = "{", postfix = "}") { (name, value) ->
             buildString {
-                appendNbtString(name)
+                appendValid(name)
                 append(Tokens.COMPOUND_KEY_TERMINATOR)
                 append(value)
             }

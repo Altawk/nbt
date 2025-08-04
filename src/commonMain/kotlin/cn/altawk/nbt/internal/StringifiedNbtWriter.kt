@@ -80,7 +80,7 @@ internal class StringifiedNbtWriter(private val builder: Appendable, private val
 
     override fun beginCompoundEntry(name: String) {
         beginCollectionEntry()
-        builder.appendNbtString(name).append(COMPOUND_KEY_TERMINATOR)
+        builder.appendValid(name).append(COMPOUND_KEY_TERMINATOR)
         if (prettyPrint) builder.append(PRETTY_PRINT_SPACE)
     }
 
@@ -132,7 +132,7 @@ internal class StringifiedNbtWriter(private val builder: Appendable, private val
     }
 
     override fun writeString(value: String) {
-        builder.appendNbtString(value, forceQuote = true)
+        builder.appendQuoted(value)
     }
 
     private fun appendPrettyNewLine() {
@@ -144,7 +144,7 @@ internal class StringifiedNbtWriter(private val builder: Appendable, private val
 
 }
 
-private fun Appendable.appendQuoted(value: String): Appendable = apply {
+internal fun Appendable.appendQuoted(value: String): Appendable = apply {
     append(DOUBLE_QUOTE)
     value.forEach {
         if (it == DOUBLE_QUOTE) append(ESCAPE_MARKER)
@@ -153,9 +153,8 @@ private fun Appendable.appendQuoted(value: String): Appendable = apply {
     append(DOUBLE_QUOTE)
 }
 
-internal fun Appendable.appendNbtString(value: String, forceQuote: Boolean = false): Appendable {
+internal fun Appendable.appendValid(value: String): Appendable {
     return when {
-        forceQuote -> appendQuoted(value)
         value.isEmpty() -> append(DOUBLE_QUOTE).append(DOUBLE_QUOTE)
         value.all { Tokens.id(it) } -> append(value)
         !value.contains(DOUBLE_QUOTE) -> append(DOUBLE_QUOTE).append(value).append(DOUBLE_QUOTE)
