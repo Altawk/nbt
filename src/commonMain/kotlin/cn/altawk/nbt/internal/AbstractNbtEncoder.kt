@@ -39,6 +39,8 @@ internal abstract class AbstractNbtEncoder : NbtEncoder, AbstractEncoder() {
             beginList(descriptor, collectionSize)
         } else beginCompound(descriptor)
 
+    override fun encodeBoolean(value: Boolean) = encodeByte(if (value) 1 else 0)
+
     override fun <T : Any?> encodeSerializableElement(
         descriptor: SerialDescriptor,
         index: Int,

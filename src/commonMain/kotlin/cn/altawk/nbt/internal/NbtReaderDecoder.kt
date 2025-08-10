@@ -3,7 +3,6 @@
 package cn.altawk.nbt.internal
 
 import cn.altawk.nbt.NbtFormat
-import cn.altawk.nbt.exception.NbtDecodingException
 import cn.altawk.nbt.tag.NbtTag
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -28,13 +27,6 @@ internal open class NbtReaderDecoder(
     }
 
     override fun decodeElementIndex(descriptor: SerialDescriptor): Int = 0
-
-    override fun decodeBoolean() =
-        when (val byte = reader.readByte()) {
-            0.toByte() -> false
-            1.toByte() -> true
-            else -> throw NbtDecodingException("Expected a byte(0 or 1) to be a Boolean, but was $byte")
-        }
 
     override fun decodeNbtTag(): NbtTag = reader.readTag()
     override fun decodeChar() = reader.readString().first()

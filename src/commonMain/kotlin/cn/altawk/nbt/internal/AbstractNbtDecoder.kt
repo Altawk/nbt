@@ -3,6 +3,7 @@
 package cn.altawk.nbt.internal
 
 import cn.altawk.nbt.NbtDecoder
+import cn.altawk.nbt.exception.NbtDecodingException
 import cn.altawk.nbt.tag.NbtTag
 import cn.altawk.nbt.tag.NbtTagSerializer
 import kotlinx.serialization.DeserializationStrategy
@@ -27,6 +28,13 @@ internal abstract class AbstractNbtDecoder : NbtDecoder, AbstractDecoder() {
     override fun decodeByteArray(): ByteArray = decodeValue() as ByteArray
     override fun decodeIntArray(): IntArray = decodeValue() as IntArray
     override fun decodeLongArray(): LongArray = decodeValue() as LongArray
+
+    override fun decodeBoolean() =
+        when (val byte = decodeByte()) {
+            0.toByte() -> false
+            1.toByte() -> true
+            else -> throw NbtDecodingException("Expected a byte(0 or 1) to be a Boolean, but was $byte")
+        }
 
     override fun <T> decodeSerializableValue(deserializer: DeserializationStrategy<T>): T =
         @Suppress("UNCHECKED_CAST")

@@ -87,7 +87,6 @@ internal class NbtWriterEncoder(
     override fun encodeEnum(enumDescriptor: SerialDescriptor, index: Int) = encodeString(enumDescriptor.getElementName(index))
 
     override fun encodeByte(value: Byte) = writer.writeByte(value)
-    override fun encodeBoolean(value: Boolean) = writer.writeByte(if (value) 1 else 0)
     override fun encodeChar(value: Char) = writer.writeString(value.toString())
     override fun encodeDouble(value: Double) = writer.writeDouble(value)
     override fun encodeFloat(value: Float) = writer.writeFloat(value)
