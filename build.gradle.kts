@@ -38,6 +38,15 @@ kotlin {
         }
     }
 
+    // JVM 工具链版本
+    jvmToolchain(8)
+
+}
+
+tasks.withType<Test> {
+    testLogging {
+        showStandardStreams = true
+    }
 }
 
 publishing {

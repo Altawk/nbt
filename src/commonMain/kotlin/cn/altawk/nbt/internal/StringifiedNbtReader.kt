@@ -32,7 +32,7 @@ import cn.altawk.nbt.tag.*
  */
 internal class StringifiedNbtReader(private val buffer: CharBuffer) : NbtReader {
 
-    constructor(snbt: String) : this(CharBuffer(snbt))
+    constructor(content: String) : this(CharBuffer(content))
 
     private var firstEntry = true
 
