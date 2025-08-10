@@ -1,6 +1,5 @@
 package cn.altawk.nbt.exception
 
-import cn.altawk.nbt.NbtPath
 import kotlinx.serialization.SerializationException
 
 /**
@@ -12,39 +11,19 @@ import kotlinx.serialization.SerializationException
 
 public sealed class NbtException(
     message: String,
-    path: NbtPath? = null,
     cause: Throwable? = null,
-) : SerializationException(message, cause) {
-
-    public var path: NbtPath? = path
-        internal set
-
-}
+) : SerializationException(message, cause)
 
 public open class NbtEncodingException(
     message: String,
-    path: NbtPath? = null,
     cause: Throwable? = null,
-) : NbtException(message, path, cause) {
-
-    override val message: String = if (path != null) "Error while encoding '$path': $message" else message
-
+) : NbtException(message, cause) {
+    override val message: String = "Error while encoding: $message"
 }
 
 public open class NbtDecodingException(
     message: String,
-    path: NbtPath? = null,
     cause: Throwable? = null,
-) : NbtException(message, path, cause) {
-
-    override val message: String = if (path != null) "Error while decoding '$path': $message" else message
-
+) : NbtException(message, cause) {
+    override val message: String = "Error while decoding: $message"
 }
-
-internal fun <R> catching(path: NbtPath?, block: () -> R): R =
-    try {
-        block()
-    } catch (ex: NbtException) {
-        ex.path = path
-        throw ex
-    }

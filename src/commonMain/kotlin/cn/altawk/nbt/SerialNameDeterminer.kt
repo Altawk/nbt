@@ -13,11 +13,11 @@ public interface SerialNameDeterminer {
     /**
      * Retrieves the element name for a given descriptor and index.
      *
-     * @param index The index within the descriptor.
+     * @param elementName original element name
      * @param descriptor The serial descriptor.
      * @return The element name.
      */
-    public fun determineName(index: Int, descriptor: SerialDescriptor): String
+    public fun determineName(elementName: String, descriptor: SerialDescriptor): String
 
     /**
      * Map the element name.
@@ -32,7 +32,7 @@ public interface SerialNameDeterminer {
      * Default implementation of [SerialNameDeterminer].
      */
     public object Default : SerialNameDeterminer {
-        override fun determineName(index: Int, descriptor: SerialDescriptor): String = descriptor.getElementName(index)
+        override fun determineName(elementName: String, descriptor: SerialDescriptor): String = elementName
         override fun mapName(elementName: String, descriptor: SerialDescriptor): String = elementName
     }
 

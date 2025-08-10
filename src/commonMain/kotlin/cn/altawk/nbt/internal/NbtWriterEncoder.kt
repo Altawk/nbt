@@ -26,11 +26,13 @@ internal class NbtWriterEncoder(
     override fun encodeSerializableElement(descriptor: SerialDescriptor, index: Int): Boolean {
         when (descriptor.kind as StructureKind) {
             StructureKind.CLASS, StructureKind.OBJECT -> {
-                val determined = nbt.configuration.nameDeterminer.determineName(index, descriptor)
+                val rawName = descriptor.getElementName(index)
+                val determined = nbt.configuration.nameDeterminer.determineName(rawName, descriptor)
                 // Do not encode if the element name is EOF
                 if (determined == NbtReader.EOF) return false
                 elementName = determined
             }
+
             StructureKind.MAP -> if (index % 2 == 0) encodingMapKey = true
             else -> Unit
         }
@@ -97,36 +99,34 @@ internal class NbtWriterEncoder(
     override fun encodeIntArray(value: IntArray) = writer.writeIntArray(value)
     override fun encodeLongArray(value: LongArray) = writer.writeLongArray(value)
 
-    override fun encodeNbtTag(tag: NbtTag) {
-        when (tag.type) {
-            BYTE -> writer.writeByte((tag as NbtByte).content)
-            SHORT -> writer.writeShort((tag as NbtShort).content)
-            INT -> writer.writeInt((tag as NbtInt).content)
-            LONG -> writer.writeLong((tag as NbtLong).content)
-            FLOAT -> writer.writeFloat((tag as NbtFloat).content)
-            DOUBLE -> writer.writeDouble((tag as NbtDouble).content)
-            STRING -> writer.writeString((tag as NbtString).content)
-            BYTE_ARRAY -> writer.writeByteArray((tag as NbtByteArray).content)
-            INT_ARRAY -> writer.writeIntArray((tag as NbtIntArray).content)
-            LONG_ARRAY -> writer.writeLongArray((tag as NbtLongArray).content)
-            LIST -> {
-                writer.beginList((tag as NbtList).size)
-                for (element in tag) {
+    override fun encodeNbtTag(value: NbtTag) {
+        when (value) {
+            is NbtByte -> writer.writeByte(value.content)
+            is NbtShort -> writer.writeShort(value.content)
+            is NbtInt -> writer.writeInt(value.content)
+            is NbtLong -> writer.writeLong(value.content)
+            is NbtFloat -> writer.writeFloat(value.content)
+            is NbtDouble -> writer.writeDouble(value.content)
+            is NbtString -> writer.writeString(value.content)
+            is NbtByteArray -> writer.writeByteArray(value.content)
+            is NbtIntArray -> writer.writeIntArray(value.content)
+            is NbtLongArray -> writer.writeLongArray(value.content)
+            is NbtList -> {
+                writer.beginList((value).size)
+                for (element in value) {
                     encodeNbtTag(element)
                 }
                 writer.endList()
             }
 
-            COMPOUND -> {
+            is NbtCompound -> {
                 writer.beginCompound()
-                for ((name, value) in tag as NbtCompound) {
-                    writer.beginCompoundEntry(name)
-                    encodeNbtTag(value)
+                for (entry in value) {
+                    writer.beginCompoundEntry(entry.key)
+                    encodeNbtTag(entry.value)
                 }
                 writer.endCompound()
             }
-
-            END -> Unit
         }
     }
 

@@ -20,7 +20,7 @@ public interface NbtEncoder : Encoder, CompositeEncoder {
     /**
      * Encode a [NbtTag].
      */
-    public fun encodeNbtTag(tag: NbtTag)
+    public fun encodeNbtTag(value: NbtTag)
 
     /**
      * Encode a [ByteArray].

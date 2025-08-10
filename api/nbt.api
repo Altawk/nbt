@@ -150,32 +150,31 @@ public abstract class cn/altawk/nbt/NbtTransformingSerializer : kotlinx/serializ
 }
 
 public abstract interface class cn/altawk/nbt/SerialNameDeterminer {
-	public abstract fun determineName (ILkotlinx/serialization/descriptors/SerialDescriptor;)Ljava/lang/String;
+	public abstract fun determineName (Ljava/lang/String;Lkotlinx/serialization/descriptors/SerialDescriptor;)Ljava/lang/String;
 	public abstract fun mapName (Ljava/lang/String;Lkotlinx/serialization/descriptors/SerialDescriptor;)Ljava/lang/String;
 }
 
 public final class cn/altawk/nbt/SerialNameDeterminer$Default : cn/altawk/nbt/SerialNameDeterminer {
 	public static final field INSTANCE Lcn/altawk/nbt/SerialNameDeterminer$Default;
-	public fun determineName (ILkotlinx/serialization/descriptors/SerialDescriptor;)Ljava/lang/String;
+	public fun determineName (Ljava/lang/String;Lkotlinx/serialization/descriptors/SerialDescriptor;)Ljava/lang/String;
 	public fun mapName (Ljava/lang/String;Lkotlinx/serialization/descriptors/SerialDescriptor;)Ljava/lang/String;
 }
 
 public class cn/altawk/nbt/exception/NbtDecodingException : cn/altawk/nbt/exception/NbtException {
-	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/lang/Throwable;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun getMessage ()Ljava/lang/String;
 }
 
 public class cn/altawk/nbt/exception/NbtEncodingException : cn/altawk/nbt/exception/NbtException {
-	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/lang/Throwable;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun getMessage ()Ljava/lang/String;
 }
 
 public abstract class cn/altawk/nbt/exception/NbtException : kotlinx/serialization/SerializationException {
-	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/lang/Throwable;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun getPath-C2-FKJA ()Ljava/util/List;
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
 public final class cn/altawk/nbt/exception/StringifiedNbtParseException : cn/altawk/nbt/exception/NbtDecodingException {

@@ -9,7 +9,7 @@ import cn.altawk.nbt.tag.*
  * @author TheFloodDragon
  * @since 2025/3/15 12:50
  */
-internal open class TreeNbtReader(tag: NbtTag) : NbtReader {
+internal class TreeNbtReader(tag: NbtTag) : NbtReader {
     private var reader: NbtReader = RootReader(tag)
 
     override fun readTag(): NbtTag = reader.readTag()

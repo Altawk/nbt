@@ -5,12 +5,13 @@ import cn.altawk.nbt.NbtPath.IndexNode
 import cn.altawk.nbt.NbtPath.NameNode
 
 /**
- * NbtPathBuilder
+ * NbtPathHelper
  *
  * @since 2025/3/29 17:34
  */
-internal object NbtPathBuilder {
+internal object NbtPathHelper {
 
+    @JvmStatic
     fun fromString(path: String) = buildList {
         val buf = CharBuffer(path)
         var name = ""
@@ -45,6 +46,7 @@ internal object NbtPathBuilder {
         release() // release the last name
     }
 
+    @JvmStatic
     fun toString(path: Iterable<NbtPath.Node>) = buildString {
         var first = true
         for (node in path) {

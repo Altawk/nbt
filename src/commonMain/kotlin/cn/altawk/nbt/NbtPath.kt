@@ -1,6 +1,6 @@
 package cn.altawk.nbt
 
-import cn.altawk.nbt.internal.NbtPathBuilder
+import cn.altawk.nbt.internal.NbtPathHelper
 
 /**
  * NbtPath
@@ -13,9 +13,9 @@ public value class NbtPath(private val path: List<Node>) : List<NbtPath.Node> by
 
     public constructor(vararg nodes: Node) : this(nodes.toList())
 
-    public constructor(path: String) : this(NbtPathBuilder.fromString(path))
+    public constructor(path: String) : this(NbtPathHelper.fromString(path))
 
-    override fun toString(): String = NbtPathBuilder.toString(this.path)
+    override fun toString(): String = NbtPathHelper.toString(this.path)
 
     public operator fun plus(element: Iterable<Node>): NbtPath = NbtPath(this.path.plus(element))
 

@@ -40,6 +40,7 @@ internal object Tokens {
     const val LITERAL_TRUE: String = "true"
     const val LITERAL_FALSE: String = "false"
 
+    @JvmField
     val NEWLINE: String = System.getProperty("line.separator", "\n")
 
     /**
@@ -51,6 +52,7 @@ internal object Tokens {
      * @param c the character
      * @return identifier
      */
+    @JvmStatic
     fun id(c: Char): Boolean {
         return (c in 'a'..'z')
                 || (c in 'A'..'Z')
@@ -67,6 +69,7 @@ internal object Tokens {
      * @param c character to check
      * @return if possibly part of a number
      */
+    @JvmStatic
     fun numeric(c: Char): Boolean {
         return (c in '0'..'9') // digit
                 || c == '+' || c == '-' // positive or negative
