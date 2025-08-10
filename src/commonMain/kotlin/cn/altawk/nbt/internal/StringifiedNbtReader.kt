@@ -113,10 +113,8 @@ internal class StringifiedNbtReader(private val buffer: CharBuffer) : NbtReader 
             // 校验键值对分隔符 ":"
             buffer.skipWhitespace().expect(COMPOUND_KEY_TERMINATOR)
             // 校验空值
-            buffer.tempt {
-                val peek = skipWhitespace().peek()
-                if (peek == VALUE_SEPARATOR || peek == COMPOUND_END) makeError("Expected value, but got nothing")
-            }
+            val peek = buffer.skipWhitespace().peek()
+            if (peek == VALUE_SEPARATOR || peek == COMPOUND_END) buffer.makeError("Expected value, but got nothing")
             return key
         }
     }

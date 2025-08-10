@@ -9,7 +9,7 @@ import cn.altawk.nbt.tag.*
  * @author TheFloodDragon
  * @since 2025/3/15 12:50
  */
-internal class TreeNbtReader(tag: NbtTag) : NbtReader {
+internal open class TreeNbtReader(tag: NbtTag) : NbtReader {
     private var reader: NbtReader = RootReader(tag)
 
     override fun readTag(): NbtTag = reader.readTag()
@@ -38,7 +38,7 @@ internal class TreeNbtReader(tag: NbtTag) : NbtReader {
 
     private abstract inner class TagReader : NbtReader {
 
-        override fun readTag(): NbtTag = error("${this::class} does not support readTag()")
+        abstract override fun readTag(): NbtTag
 
         override fun beginCompound() {
             val tag = readTag() as NbtCompound
@@ -128,11 +128,12 @@ internal class TreeNbtReader(tag: NbtTag) : NbtReader {
         }
     }
 
-    private inner class ByteArrayReader(val parent: NbtReader, tag: NbtByteArray) : TagReader() {
-        private val array: ByteArray = tag.content
+    private inner class ByteArrayReader(val parent: NbtReader, val array: NbtByteArray) : TagReader() {
         private var index = 0
 
-        override fun beginByteArrayEntry(): Boolean = index <= array.lastIndex
+        override fun readTag() = this.array
+
+        override fun beginByteArrayEntry(): Boolean = index <= array.content.lastIndex
 
         override fun endByteArray() {
             reader = parent
@@ -142,11 +143,12 @@ internal class TreeNbtReader(tag: NbtTag) : NbtReader {
     }
 
 
-    private inner class IntArrayReader(val parent: NbtReader, tag: NbtIntArray) : TagReader() {
-        private val array: IntArray = tag.content
+    private inner class IntArrayReader(val parent: NbtReader, val array: NbtIntArray) : TagReader() {
         private var index = 0
 
-        override fun beginIntArrayEntry(): Boolean = index <= array.lastIndex
+        override fun readTag() = this.array
+
+        override fun beginIntArrayEntry(): Boolean = index <= array.content.lastIndex
 
         override fun endIntArray() {
             reader = parent
@@ -156,11 +158,12 @@ internal class TreeNbtReader(tag: NbtTag) : NbtReader {
     }
 
 
-    private inner class LongArrayReader(val parent: NbtReader, tag: NbtLongArray) : TagReader() {
-        private val array: LongArray = tag.content
+    private inner class LongArrayReader(val parent: NbtReader, val array: NbtLongArray) : TagReader() {
         private var index = 0
 
-        override fun beginLongArrayEntry(): Boolean = index <= array.lastIndex
+        override fun readTag() = this.array
+
+        override fun beginLongArrayEntry(): Boolean = index <= array.content.lastIndex
 
         override fun endLongArray() {
             reader = parent

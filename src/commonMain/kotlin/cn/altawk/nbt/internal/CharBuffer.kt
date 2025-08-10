@@ -51,9 +51,10 @@ internal class CharBuffer(private val sequence: CharSequence) {
         var endIdx = -1
         var idx = this.index
         while (idx < sequence.length) {
-            if (sequence[idx] == Tokens.ESCAPE_MARKER) {
+            val char = sequence[idx]
+            if (char == Tokens.ESCAPE_MARKER) {
                 idx++
-            } else if (sequence[idx].lowercaseChar() == u) {
+            } else if (char.lowercaseChar() == u) {
                 endIdx = idx
                 break
             }
