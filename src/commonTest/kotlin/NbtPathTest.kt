@@ -74,4 +74,11 @@ class NbtPathTest {
         assertEquals(NbtPath("root.items[3].`display name`"), appended)
     }
 
+    // #9 IndexNode followed by NameNode should have dot separator
+    @Test
+    fun should_separate_index_and_name_with_dot() {
+        val path = NbtPath(NbtPath.IndexNode(0), NbtPath.NameNode("x"))
+        assertEquals("[0].x", path.toString())
+    }
+
 }

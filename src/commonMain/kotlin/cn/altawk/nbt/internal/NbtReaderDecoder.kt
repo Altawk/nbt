@@ -46,7 +46,7 @@ internal open class NbtReaderDecoder(
         nbt: NbtFormat,
         reader: NbtReader
     ) : NbtReaderDecoder(nbt, reader) {
-        private var position: Int = 0
+        private var position: Int = -1
         private lateinit var usedIndexes: BooleanArray
         private var forceNull: Boolean = false
 
@@ -80,6 +80,11 @@ internal open class NbtReaderDecoder(
                         }
                     }
                     return CompositeDecoder.DECODE_DONE
+                }
+
+                // Skip unknown fields by consuming their value
+                if (index == CompositeDecoder.UNKNOWN_NAME) {
+                    reader.readTag() // discard the value
                 }
             } while (index == CompositeDecoder.UNKNOWN_NAME)
 

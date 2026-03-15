@@ -13,12 +13,27 @@ public abstract interface class cn/altawk/nbt/NbtDecoder : kotlinx/serialization
 	public abstract fun getNbt ()Lcn/altawk/nbt/NbtFormat;
 }
 
+public final class cn/altawk/nbt/NbtDecoder$DefaultImpls {
+	public static fun decodeCollectionSize (Lcn/altawk/nbt/NbtDecoder;Lkotlinx/serialization/descriptors/SerialDescriptor;)I
+	public static fun decodeNullableSerializableValue (Lcn/altawk/nbt/NbtDecoder;Lkotlinx/serialization/DeserializationStrategy;)Ljava/lang/Object;
+	public static fun decodeSequentially (Lcn/altawk/nbt/NbtDecoder;)Z
+	public static fun decodeSerializableValue (Lcn/altawk/nbt/NbtDecoder;Lkotlinx/serialization/DeserializationStrategy;)Ljava/lang/Object;
+}
+
 public abstract interface class cn/altawk/nbt/NbtEncoder : kotlinx/serialization/encoding/CompositeEncoder, kotlinx/serialization/encoding/Encoder {
 	public abstract fun encodeByteArray ([B)V
 	public abstract fun encodeIntArray ([I)V
 	public abstract fun encodeLongArray ([J)V
 	public abstract fun encodeNbtTag (Lcn/altawk/nbt/tag/NbtTag;)V
 	public abstract fun getNbt ()Lcn/altawk/nbt/NbtFormat;
+}
+
+public final class cn/altawk/nbt/NbtEncoder$DefaultImpls {
+	public static fun beginCollection (Lcn/altawk/nbt/NbtEncoder;Lkotlinx/serialization/descriptors/SerialDescriptor;I)Lkotlinx/serialization/encoding/CompositeEncoder;
+	public static fun encodeNotNullMark (Lcn/altawk/nbt/NbtEncoder;)V
+	public static fun encodeNullableSerializableValue (Lcn/altawk/nbt/NbtEncoder;Lkotlinx/serialization/SerializationStrategy;Ljava/lang/Object;)V
+	public static fun encodeSerializableValue (Lcn/altawk/nbt/NbtEncoder;Lkotlinx/serialization/SerializationStrategy;Ljava/lang/Object;)V
+	public static fun shouldEncodeElementDefault (Lcn/altawk/nbt/NbtEncoder;Lkotlinx/serialization/descriptors/SerialDescriptor;I)Z
 }
 
 public class cn/altawk/nbt/NbtFormat : kotlinx/serialization/StringFormat {

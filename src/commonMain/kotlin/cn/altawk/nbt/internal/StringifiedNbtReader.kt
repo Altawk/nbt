@@ -34,7 +34,7 @@ internal class StringifiedNbtReader(private val buffer: CharBuffer) : NbtReader 
 
     constructor(content: String) : this(CharBuffer(content))
 
-    private var firstEntry = true
+    private val firstEntryStack = ArrayDeque<Boolean>().apply { addLast(true) }
 
     override fun readTag(): NbtTag {
         if (!buffer.skipWhitespace().hasMore()) buffer.makeError("Expected value, but got nothing")
@@ -93,21 +93,21 @@ internal class StringifiedNbtReader(private val buffer: CharBuffer) : NbtReader 
 
     override fun beginCompound() {
         buffer.skipWhitespace().expect(COMPOUND_BEGIN)
-        firstEntry = true
+        firstEntryStack.addLast(true)
     }
 
     override fun beginCompoundEntry(): String {
         buffer.skipWhitespace()
-        if (buffer.peek() == COMPOUND_END) return EOF else {
-            if (firstEntry) {
-                firstEntry = false
+        if (!buffer.hasMore() || buffer.peek() == COMPOUND_END) return EOF else {
+            if (firstEntryStack.last()) {
+                firstEntryStack[firstEntryStack.lastIndex] = false
             } else {
                 val char = buffer.take()
                 if (char != VALUE_SEPARATOR) buffer.makeError("Expected ',' or '}', but got '$char'")
             }
             // Skip extra commas (lenient: allows {,} {a:b,,} etc.)
-            while (buffer.skipWhitespace().peek() == VALUE_SEPARATOR) buffer.advance()
-            if (buffer.skipWhitespace().peek() == COMPOUND_END) return EOF
+            while (buffer.skipWhitespace().hasMore() && buffer.peek() == VALUE_SEPARATOR) buffer.advance()
+            if (!buffer.skipWhitespace().hasMore() || buffer.peek() == COMPOUND_END) return EOF
 
             val key = try {
                 readString()
@@ -125,40 +125,42 @@ internal class StringifiedNbtReader(private val buffer: CharBuffer) : NbtReader 
 
     override fun endCompound() {
         buffer.expect(COMPOUND_END)
+        firstEntryStack.removeLast()
     }
 
     private fun beginArray(type: Char): Int {
         buffer.skipWhitespace().expect(ARRAY_BEGIN)
         buffer.skipWhitespace().expect(type, true)
         buffer.skipWhitespace().expect(ARRAY_SIGNATURE_SEPARATOR)
-        firstEntry = true
-        return if (buffer.skipWhitespace().peek() == ARRAY_END) 0 else UNKNOWN_SIZE
+        firstEntryStack.addLast(true)
+        return if (buffer.skipWhitespace().hasMore() && buffer.peek() == ARRAY_END) 0 else UNKNOWN_SIZE
     }
 
     private fun beginCollectionEntry(): Boolean {
-        if (buffer.skipWhitespace().peek() == ARRAY_END) return false
+        if (!buffer.skipWhitespace().hasMore() || buffer.peek() == ARRAY_END) return false
 
-        if (firstEntry) {
-            firstEntry = false
+        if (firstEntryStack.last()) {
+            firstEntryStack[firstEntryStack.lastIndex] = false
         } else {
             val char = buffer.take()
             if (char != VALUE_SEPARATOR) buffer.makeError("Expected ',' or ']', but got '$char'")
         }
         // Skip extra commas (lenient: allows [,] [1,,] etc.)
-        while (buffer.skipWhitespace().peek() == VALUE_SEPARATOR) buffer.advance()
-        if (buffer.skipWhitespace().peek() == ARRAY_END) return false
+        while (buffer.skipWhitespace().hasMore() && buffer.peek() == VALUE_SEPARATOR) buffer.advance()
+        if (!buffer.hasMore() || buffer.peek() == ARRAY_END) return false
         return true
     }
 
     private fun endCollection() {
         buffer.skipWhitespace().expect(ARRAY_END)
+        firstEntryStack.removeLast()
     }
 
     override fun beginList(): Int {
         buffer.skipWhitespace().expect(ARRAY_BEGIN)
         buffer.skipWhitespace()
-        firstEntry = true
-        return if (buffer.peek() == ARRAY_END) 0 else UNKNOWN_SIZE
+        firstEntryStack.addLast(true)
+        return if (buffer.hasMore() && buffer.peek() == ARRAY_END) 0 else UNKNOWN_SIZE
     }
 
     override fun beginListEntry() = beginCollectionEntry()
@@ -215,8 +217,8 @@ internal class StringifiedNbtReader(private val buffer: CharBuffer) : NbtReader 
             val current = buffer.peek()
             if (current == ESCAPE_MARKER) {
                 hasEscape = true
-                buffer.advance()
-                buffer.advance()
+                if (!buffer.advance()) break // skip '\', stop if EOF
+                if (!buffer.advance()) { length += 1; break } // skip escaped char, stop if EOF
                 length += 1 // only the escaped char counts
                 if (noLongerNumericAt == -1) noLongerNumericAt = length
             } else if (Tokens.id(current)) {
@@ -268,12 +270,12 @@ internal class StringifiedNbtReader(private val buffer: CharBuffer) : NbtReader 
                     if (doubleValue.isFinite()) return doubleValue
                 }
             }
-        } else if (noLongerNumericAt == -1) { // 没有后缀，则可能是整数或双精度
-            val number = built.toIntOrNull()
-            if (number != null) return number else {
-                if (built.indexOf('.') != -1) { // 无后缀 double 必须包含 '.'
-                    return built.toDoubleOrNull() ?: buffer.makeError("Expected Double, but was '$built'")
-                }
+        } else if (noLongerNumericAt == -1) { // 没有后缀，则可能是整数、长整数或双精度
+            built.toIntOrNull()?.let { return it }
+            built.toLongOrNull()?.let { return it }
+            // 无后缀 double: 必须包含 '.' 或 'e'/'E' (科学计数法)
+            if (built.indexOf('.') != -1 || built.indexOfFirst { it == 'e' || it == 'E' } != -1) {
+                return built.toDoubleOrNull() ?: buffer.makeError("Expected Double, but was '$built'")
             }
         }
 

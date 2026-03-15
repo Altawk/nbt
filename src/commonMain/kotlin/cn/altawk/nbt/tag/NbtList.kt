@@ -28,7 +28,7 @@ public class NbtList(
     /**
      * The type of elements in the list.
      */
-    public val elementType: NbtType = if (content.isEmpty()) NbtType.END else content.first().type
+    public val elementType: NbtType get() = if (content.isEmpty()) NbtType.END else content.first().type
 
     /**
      * Clone the tag.

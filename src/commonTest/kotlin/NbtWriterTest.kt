@@ -97,4 +97,28 @@ class NbtWriterTest {
             explicitFormat.encodeToNbtTag(serializer, example).toString(),
         )
     }
+
+    // #3 Unknown fields in SNBT should be skipped during deserialization
+    @Test
+    fun should_skip_unknown_fields_in_snbt() {
+        @Serializable
+        data class Simple(val name: String)
+
+        val snbt = "{name:\"hello\",unknown:42,extra:{nested:1}}"
+        val result = format.decodeFromString(Simple.serializer(), snbt)
+        assertEquals("hello", result.name)
+    }
+
+    // #6 First nullable field (index=0) should be force-null when missing
+    @Test
+    fun should_force_null_for_first_nullable_field_when_missing() {
+        @Serializable
+        data class FirstNull(val first: String?, val second: Int)
+
+        val noExplicitNulls = NbtFormat { explicitNulls = false }
+        val snbt = "{second:42}"
+        val result = noExplicitNulls.decodeFromString(FirstNull.serializer(), snbt)
+        assertEquals(null, result.first)
+        assertEquals(42, result.second)
+    }
 }

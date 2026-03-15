@@ -121,6 +121,14 @@ class NbtListTest {
     }
 
     @Test
+    fun should_update_element_type_after_mutation() {
+        val list = NbtList()
+        assertEquals(NbtType.END, list.elementType)
+        list.add(NbtInt(1))
+        assertEquals(NbtType.INT, list.elementType)
+    }
+
+    @Test
     fun should_not_equal_nbt_tag_of_different_type_with_same_contents() {
         assertNotEquals<NbtTag>(NbtByteArray(byteArrayOf()), NbtList())
         assertNotEquals<NbtTag>(NbtIntArray(intArrayOf()), NbtList())

@@ -51,7 +51,10 @@ internal object NbtPathHelper {
         var first = true
         for (node in path) {
             when (node) {
-                is IndexNode -> append("[${node.index}]")
+                is IndexNode -> {
+                    append("[${node.index}]")
+                    first = false
+                }
                 is NameNode -> {
                     if (!first) append('.') else first = false
                     if (node.name.all { Tokens.id(it) }) {

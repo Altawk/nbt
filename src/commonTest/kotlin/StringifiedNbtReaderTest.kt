@@ -385,4 +385,112 @@ class StringifiedNbtReaderTest {
             NbtFormat.decodeFromString(NbtTag.serializer(), "[Q; 1]")
         }
     }
+
+    // #1 Nested structures should preserve firstEntry state
+    @Test
+    fun should_parse_nested_structures_correctly() {
+        // After inner compound ends, outer compound must still require comma
+        check(
+            NbtCompound {
+                putCompound("a") { put("b", 1) }
+                put("c", 2)
+            },
+            "{a:{b:1},c:2}",
+        )
+        // After inner list ends, outer list must still require comma
+        check(
+            NbtList {
+                addList { add(1) }
+                addList { add(2) }
+            },
+            "[[1],[2]]",
+        )
+        // Compound inside list inside compound
+        check(
+            NbtCompound {
+                putList("items") {
+                    addCompound { put("id", 1) }
+                    addCompound { put("id", 2) }
+                }
+                put("count", 2)
+            },
+            "{items:[{id:1},{id:2}],count:2}",
+        )
+    }
+
+    // #1 Missing comma after nested structure must be rejected
+    @Test
+    fun should_fail_on_missing_comma_after_nested_structure() {
+        // {a:{b:1}c:2} — missing comma between entries
+        assertFailsWith<StringifiedNbtParseException> {
+            NbtFormat.decodeFromString(NbtTag.serializer(), "{a:{b:1}c:2}")
+        }
+        // {a:[1]c:2} — missing comma after nested list
+        assertFailsWith<StringifiedNbtParseException> {
+            NbtFormat.decodeFromString(NbtTag.serializer(), "{a:[1]c:2}")
+        }
+        // [[1][2]] — missing comma between nested lists
+        assertFailsWith<StringifiedNbtParseException> {
+            NbtFormat.decodeFromString(NbtTag.serializer(), "[[1][2]]")
+        }
+        // Empty nested: {a:{}c:2} — firstEntry left as true without stack protection
+        assertFailsWith<StringifiedNbtParseException> {
+            NbtFormat.decodeFromString(NbtTag.serializer(), "{a:{}c:2}")
+        }
+        // Empty nested list: {a:[]c:2}
+        assertFailsWith<StringifiedNbtParseException> {
+            NbtFormat.decodeFromString(NbtTag.serializer(), "{a:[]c:2}")
+        }
+        // Empty nested lists: [[][]]
+        assertFailsWith<StringifiedNbtParseException> {
+            NbtFormat.decodeFromString(NbtTag.serializer(), "[[][]]")
+        }
+    }
+
+    // #2 Backslash escaping round-trip
+    @Test
+    fun should_round_trip_strings_with_backslash() {
+        val tag = NbtString("hello\\world")
+        val snbt = tag.toString()
+        check(tag, snbt)
+
+        val tag2 = NbtString("a\\\"b")
+        val snbt2 = tag2.toString()
+        check(tag2, snbt2)
+    }
+
+    // #4 Trailing backslash in unquoted scalar should not crash (graceful handling)
+    @Test
+    fun should_handle_trailing_backslash_in_scalar() {
+        // Trailing backslash: should not throw IndexOutOfBoundsException
+        // Lenient: the backslash is ignored, parsed as "abc"
+        check(NbtString("abc"), "abc\\")
+    }
+
+    // #5 Truncated input should throw, not crash with IndexOutOfBounds
+    @Test
+    fun should_fail_gracefully_on_truncated_input() {
+        assertFailsWith<Throwable> {
+            NbtFormat.decodeFromString(NbtTag.serializer(), "[")
+        }
+        assertFailsWith<Throwable> {
+            NbtFormat.decodeFromString(NbtTag.serializer(), "{")
+        }
+        assertFailsWith<Throwable> {
+            NbtFormat.decodeFromString(NbtTag.serializer(), "[B;")
+        }
+    }
+
+    // #8 Large integers without suffix should parse as Long, scientific notation as Double
+    @Test
+    fun should_parse_large_int_as_long() {
+        check(NbtLong(2147483648L), "2147483648")
+        check(NbtLong(-2147483649L), "-2147483649")
+    }
+
+    @Test
+    fun should_parse_scientific_notation_without_dot_as_double() {
+        check(NbtDouble(1e4), "1e4")
+        check(NbtDouble(-5E3), "-5E3")
+    }
 }

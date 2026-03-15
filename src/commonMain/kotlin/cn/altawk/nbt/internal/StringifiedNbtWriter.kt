@@ -28,65 +28,50 @@ import cn.altawk.nbt.internal.Tokens.VALUE_SEPARATOR
  */
 internal class StringifiedNbtWriter(private val builder: Appendable, private val prettyPrint: Boolean) : NbtWriter {
 
-    // State stack for nested structures
-    private val stateStack = ArrayDeque<WriterState>()
-    private var firstEntry = false
-    private var inArray = false
+    // State stack: pairs of (firstEntry, inArray) packed as two booleans per entry
+    private val firstEntryStack = ArrayDeque<Boolean>()
+    private val inArrayStack = ArrayDeque<Boolean>()
     private var level = 0
 
-    private class WriterState(val firstEntry: Boolean, val inArray: Boolean)
-
-    private fun pushState() {
-        stateStack.addLast(WriterState(firstEntry, inArray))
-    }
-
-    private fun popState() {
-        val state = stateStack.removeLast()
-        firstEntry = state.firstEntry
-        inArray = state.inArray
-    }
-
     private fun beginArray(prefix: String) {
-        pushState()
+        firstEntryStack.addLast(true)
+        inArrayStack.addLast(true)
         builder.append(prefix)
         if (prettyPrint) builder.append(PRETTY_PRINT_SPACE)
-
-        firstEntry = true
-        inArray = true
         level++
     }
 
     private fun beginCollection(prefix: Char) {
-        pushState()
+        firstEntryStack.addLast(true)
+        inArrayStack.addLast(false)
         builder.append(prefix)
-
-        firstEntry = true
-        inArray = false
         level++
     }
 
     private fun beginCollectionEntry() {
-        if (!firstEntry) {
+        if (!firstEntryStack.last()) {
             builder.append(VALUE_SEPARATOR)
-            if (prettyPrint && inArray) builder.append(PRETTY_PRINT_SPACE)
+            if (prettyPrint && inArrayStack.last()) builder.append(PRETTY_PRINT_SPACE)
         }
 
-        if (prettyPrint && !inArray) appendPrettyNewLine()
+        if (prettyPrint && !inArrayStack.last()) appendPrettyNewLine()
 
-        firstEntry = false
+        firstEntryStack[firstEntryStack.lastIndex] = false
     }
 
     private fun endCollection(suffix: Char) {
         level--
-        appendPrettyNewLine()
+        if (!firstEntryStack.last()) appendPrettyNewLine() // skip newline for empty collections
         builder.append(suffix)
-        popState()
+        firstEntryStack.removeLast()
+        inArrayStack.removeLast()
     }
 
     private fun endArray() {
         level--
         builder.append(ARRAY_END)
-        popState()
+        firstEntryStack.removeLast()
+        inArrayStack.removeLast()
     }
 
     override fun beginCompound() = beginCollection(COMPOUND_BEGIN)
@@ -121,7 +106,7 @@ internal class StringifiedNbtWriter(private val builder: Appendable, private val
     override fun endLongArray() = endArray()
 
     override fun writeByte(value: Byte) {
-        builder.append(value.toString()).append(if (inArray) TYPE_BYTE_ARRAY else TYPE_BYTE)
+        builder.append(value.toString()).append(if (inArrayStack.last()) TYPE_BYTE_ARRAY else TYPE_BYTE)
     }
 
     override fun writeLong(value: Long) {
@@ -162,11 +147,12 @@ internal fun Appendable.appendQuoted(value: String): Appendable = apply {
     var lastCopy = 0
     val len = value.length
     for (i in 0 until len) {
-        if (value[i] == DOUBLE_QUOTE) {
-            // Batch append everything before this quote
+        val c = value[i]
+        if (c == DOUBLE_QUOTE || c == ESCAPE_MARKER) {
+            // Batch append everything before this char
             if (i > lastCopy) append(value, lastCopy, i)
             append(ESCAPE_MARKER)
-            lastCopy = i // the quote itself will be included in the next batch
+            lastCopy = i // the char itself will be included in the next batch
         }
     }
     // Append remaining
