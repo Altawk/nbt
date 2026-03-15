@@ -174,6 +174,10 @@ class StringifiedNbtReaderTest {
         check(NbtByteArray(byteArrayOf(1, 2, 3)), "[B; 1b, 2b, 3b]")
 
         check(NbtByteArray(byteArrayOf(1, 2, 3)), " [ B ; 1b , 2b , 3b ] ")
+
+        // Implicit type suffix: values without suffix assume the array's type
+        check(NbtByteArray(byteArrayOf(1, 2)), "[B;1,2]")
+        check(NbtByteArray(byteArrayOf(1, 2)), "[B; 1, 2]")
     }
 
     @Test
@@ -182,6 +186,9 @@ class StringifiedNbtReaderTest {
         check(NbtIntArray(intArrayOf(1, 2, 3)), "[I; 1, 2, 3]")
 
         check(NbtIntArray(intArrayOf(1, 2, 3)), " [ I ; 1 , 2 , 3 ] ")
+
+        // Smaller types are allowed and widened to int
+        check(NbtIntArray(intArrayOf(1, 2, 3)), "[I;1b,2s,3]")
     }
 
     @Test
@@ -190,6 +197,16 @@ class StringifiedNbtReaderTest {
         check(NbtLongArray(longArrayOf(1, 2, 3)), "[L; 1L, 2L, 3L]")
 
         check(NbtLongArray(longArrayOf(1, 2, 3)), " [ L ; 1L , 2L , 3L ] ")
+
+        // Smaller types are allowed and widened to long
+        check(NbtLongArray(longArrayOf(1, 2, 3)), "[L;1b,2s,3]")
+    }
+
+    @Test
+    fun should_parse_array_with_trailing_comma() {
+        check(NbtByteArray(byteArrayOf(1, 2)), "[B;1b,2b,]")
+        check(NbtIntArray(intArrayOf(1, 2)), "[I;1,2,]")
+        check(NbtLongArray(longArrayOf(1, 2)), "[L;1L,2L,]")
     }
 
     @Test
@@ -232,6 +249,28 @@ class StringifiedNbtReaderTest {
             },
             " [ [ 1 ] , [ 2b , 3b ] ] ",
         )
+
+        // Mixed types in list
+        check(
+            NbtList {
+                add("")
+                addCompound { put("text", "hello") }
+                add(123)
+            },
+            "['', {text:\"hello\"}, 123]",
+        )
+    }
+
+    @Test
+    fun should_parse_list_with_trailing_comma() {
+        // Trailing comma is allowed after a valid element
+        check(NbtList { add(1); add(2) }, "[1,2,]")
+        check(NbtList { add(1); add(2) }, "[1, 2, ]")
+        check(NbtList { add(1.toByte()) }, "[1b,]")
+        // Lenient: multiple trailing commas and leading commas are tolerated
+        check(NbtList {}, "[,]")
+        check(NbtList { add(1) }, "[1,,]")
+        check(NbtList { add(1); add(2) }, "[1,,2]")
     }
 
     @Test
@@ -249,6 +288,17 @@ class StringifiedNbtReaderTest {
             },
             " { '' : { 1234 : 1234 } } ",
         )
+    }
+
+    @Test
+    fun should_parse_compound_with_trailing_comma() {
+        // Trailing comma is allowed after a valid entry
+        check(NbtCompound { put("a", "b") }, "{a:b,}")
+        check(NbtCompound { put("a", 1); put("b", 2) }, "{a:1,b:2,}")
+        check(NbtCompound { put("a", 1); put("b", 2) }, "{a: 1, b: 2, }")
+        // Lenient: multiple trailing commas and leading commas are tolerated
+        check(NbtCompound {}, "{,}")
+        check(NbtCompound { put("a", "b") }, "{a:b,,}")
     }
 
     @Test

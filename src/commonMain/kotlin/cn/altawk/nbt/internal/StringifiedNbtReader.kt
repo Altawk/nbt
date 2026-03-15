@@ -105,6 +105,9 @@ internal class StringifiedNbtReader(private val buffer: CharBuffer) : NbtReader 
                 val char = buffer.take()
                 if (char != VALUE_SEPARATOR) buffer.makeError("Expected ',' or '}', but got '$char'")
             }
+            // Skip extra commas (lenient: allows {,} {a:b,,} etc.)
+            while (buffer.skipWhitespace().peek() == VALUE_SEPARATOR) buffer.advance()
+            if (buffer.skipWhitespace().peek() == COMPOUND_END) return EOF
 
             val key = try {
                 readString()
@@ -141,6 +144,9 @@ internal class StringifiedNbtReader(private val buffer: CharBuffer) : NbtReader 
             val char = buffer.take()
             if (char != VALUE_SEPARATOR) buffer.makeError("Expected ',' or ']', but got '$char'")
         }
+        // Skip extra commas (lenient: allows [,] [1,,] etc.)
+        while (buffer.skipWhitespace().peek() == VALUE_SEPARATOR) buffer.advance()
+        if (buffer.skipWhitespace().peek() == ARRAY_END) return false
         return true
     }
 
