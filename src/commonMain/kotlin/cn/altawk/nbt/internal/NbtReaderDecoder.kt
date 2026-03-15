@@ -47,7 +47,7 @@ internal open class NbtReaderDecoder(
         reader: NbtReader
     ) : NbtReaderDecoder(nbt, reader) {
         private var position: Int = 0
-        private var usedIndexes = ArrayList<Int>()
+        private lateinit var usedIndexes: BooleanArray
         private var forceNull: Boolean = false
 
         init {
@@ -55,6 +55,9 @@ internal open class NbtReaderDecoder(
         }
 
         override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
+            if (!::usedIndexes.isInitialized) {
+                usedIndexes = BooleanArray(descriptor.elementsCount)
+            }
             var entryKey: String
             var index: Int
             forceNull = false
@@ -68,7 +71,7 @@ internal open class NbtReaderDecoder(
                 if (entryKey == NbtReader.EOF) {
                     while (++position < descriptor.elementsCount) {
                         if (!nbt.configuration.explicitNulls
-                            && position !in usedIndexes // Skip already used indexes
+                            && !usedIndexes[position] // O(1) lookup
                             && !descriptor.isElementOptional(position) // Skip optional elements
                             && descriptor.getElementDescriptor(position).isNullable
                         ) {
@@ -80,7 +83,7 @@ internal open class NbtReaderDecoder(
                 }
             } while (index == CompositeDecoder.UNKNOWN_NAME)
 
-            usedIndexes.add(index)
+            usedIndexes[index] = true
             return index
         }
 

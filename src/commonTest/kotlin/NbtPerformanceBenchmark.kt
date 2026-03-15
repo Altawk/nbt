@@ -1,5 +1,6 @@
 import cn.altawk.nbt.NbtFormat
 import cn.altawk.nbt.tag.*
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlin.test.Test
 import kotlin.time.Duration
@@ -11,7 +12,8 @@ import kotlin.time.measureTime
  */
 class NbtPerformanceBenchmark {
 
-    private val iterations: Int = 100
+    private val warmupIterations: Int = 20
+    private val measurementIterations: Int = 300
 
     private val format = NbtFormat {}
 
@@ -23,6 +25,16 @@ class NbtPerformanceBenchmark {
         val averageTime: Duration,
         val minTime: Duration,
         val maxTime: Duration,
+        val warmupIterations: Int,
+        val measurementIterations: Int,
+    )
+
+    data class BenchmarkSuiteResult(
+        val suiteName: String,
+        val treeEncodeResult: BenchmarkResult,
+        val treeDecodeResult: BenchmarkResult,
+        val snbtEncodeResult: BenchmarkResult,
+        val snbtDecodeResult: BenchmarkResult,
     )
 
     @Serializable
@@ -63,10 +75,17 @@ class NbtPerformanceBenchmark {
         val pitch: Float,
     )
 
-    private fun createBenchmarkData(size: Int): BenchmarkData {
+    private val benchmarkDataSmall = createBenchmarkData(size = 100, timestamp = 1_710_000_000_100L)
+    private val benchmarkDataMedium = createBenchmarkData(size = 1_000, timestamp = 1_710_000_001_000L)
+    private val benchmarkDataLarge = createBenchmarkData(size = 10_000, timestamp = 1_710_000_010_000L)
+    private val minecraftLikeData = createMinecraftLikeData()
+    private val complexNbtStructure = createComplexNbtStructure()
+
+
+    private fun createBenchmarkData(size: Int, timestamp: Long): BenchmarkData {
         return BenchmarkData(
             id = "benchmark_$size",
-            timestamp = System.currentTimeMillis(),
+            timestamp = timestamp,
             values = (1..size).map { it * 0.1 },
             metadata = (1..size / 10).associate { "key_$it" to "value_$it" },
             flags = (1..size / 5).map { it % 2 == 0 },
@@ -103,9 +122,10 @@ class NbtPerformanceBenchmark {
     }
 
     private fun createComplexNbtStructure(): NbtCompound {
+        val baseTimestamp = 1_710_123_456_000L
         return NbtCompound {
             put("version", "1.0.0")
-            put("timestamp", System.currentTimeMillis())
+            put("timestamp", baseTimestamp)
 
             putList("players") {
                 repeat(10) { i ->
@@ -172,7 +192,7 @@ class NbtPerformanceBenchmark {
                         addCompound {
                             put("x", i % 10)
                             put("z", i / 10)
-                            put("last_update", System.currentTimeMillis() - i * 1000)
+                            put("last_update", baseTimestamp - i * 1000L)
                         }
                     }
                 }
@@ -180,214 +200,147 @@ class NbtPerformanceBenchmark {
         }
     }
 
-    /**
-     * Execute a benchmark operation multiple times and collect timing statistics.
-     */
-    private fun benchmark(operation: () -> Unit): BenchmarkResult {
-        val times = mutableListOf<Duration>()
+    private fun <T> benchmark(operation: () -> T): BenchmarkResult {
+        repeat(warmupIterations) {
+            consumeResult(operation())
+        }
 
-        repeat(iterations) {
-            val time = measureTime(operation)
+        val times = ArrayList<Duration>(measurementIterations)
+        repeat(measurementIterations) {
+            lateinit var result: Any
+            val time = measureTime {
+                result = operation() as Any
+            }
+            consumeResult(result)
             times.add(time)
         }
 
-        val totalTime = times.reduce { acc, duration -> acc + duration }
-        val averageTime = totalTime / iterations
+        val totalTime = times.reduce(Duration::plus)
+        val averageTime = totalTime / measurementIterations
         val minTime = times.minOrNull() ?: Duration.ZERO
         val maxTime = times.maxOrNull() ?: Duration.ZERO
 
-        return BenchmarkResult(totalTime, averageTime, minTime, maxTime)
+        return BenchmarkResult(
+            totalTime = totalTime,
+            averageTime = averageTime,
+            minTime = minTime,
+            maxTime = maxTime,
+            warmupIterations = warmupIterations,
+            measurementIterations = measurementIterations,
+        )
+    }
+
+    private fun consumeResult(value: Any?) {
+        blackhole = blackhole xor (value?.hashCode() ?: 0)
+    }
+
+    private fun <T> runBenchmarkSuite(name: String, serializer: KSerializer<T>, value: T): BenchmarkSuiteResult {
+        println("=== $name Benchmark ===")
+
+        val treeEncoded = format.encodeToNbtTag(serializer, value)
+        val snbtEncoded = format.encodeToString(serializer, value)
+
+        val suiteResult = BenchmarkSuiteResult(
+            suiteName = name,
+            treeEncodeResult = benchmark {
+                format.encodeToNbtTag(serializer, value)
+            },
+            treeDecodeResult = benchmark {
+                format.decodeFromNbtTag(serializer, treeEncoded)
+            },
+            snbtEncodeResult = benchmark {
+                format.encodeToString(serializer, value)
+            },
+            snbtDecodeResult = benchmark {
+                format.decodeFromString(serializer, snbtEncoded)
+            },
+        )
+
+        printBenchmarkResults(suiteResult)
+        return suiteResult
     }
 
     @Test
     fun should_benchmark_small_data_serialization() {
-        val data = createBenchmarkData(100)
-
-        println("=== Small Data Benchmark (100 elements, $iterations iterations) ===")
-
-        val treeEncodeResult = benchmark {
-            format.encodeToNbtTag(BenchmarkData.serializer(), data)
-        }
-
-        val nbtTag = format.encodeToNbtTag(BenchmarkData.serializer(), data)
-        val treeDecodeResult = benchmark {
-            format.decodeFromNbtTag(BenchmarkData.serializer(), nbtTag)
-        }
-
-        val snbtEncodeResult = benchmark {
-            format.encodeToString(BenchmarkData.serializer(), data)
-        }
-
-        val snbtString = format.encodeToString(BenchmarkData.serializer(), data)
-        val snbtDecodeResult = benchmark {
-            format.decodeFromString(BenchmarkData.serializer(), snbtString)
-        }
-
-        printBenchmarkResults(
-            testName = "Small Data",
-            treeEncodeResult = treeEncodeResult,
-            treeDecodeResult = treeDecodeResult,
-            snbtEncodeResult = snbtEncodeResult,
-            snbtDecodeResult = snbtDecodeResult,
-        )
+        runBenchmarkSuite("Small Data (100 elements)", BenchmarkData.serializer(), benchmarkDataSmall)
     }
 
     @Test
     fun should_benchmark_medium_data_serialization() {
-        val data = createBenchmarkData(1000)
-
-        println("=== Medium Data Benchmark (1000 elements, $iterations iterations) ===")
-
-        val treeEncodeResult = benchmark {
-            format.encodeToNbtTag(BenchmarkData.serializer(), data)
-        }
-
-        val nbtTag = format.encodeToNbtTag(BenchmarkData.serializer(), data)
-        val treeDecodeResult = benchmark {
-            format.decodeFromNbtTag(BenchmarkData.serializer(), nbtTag)
-        }
-
-        val snbtEncodeResult = benchmark {
-            format.encodeToString(BenchmarkData.serializer(), data)
-        }
-
-        val snbtString = format.encodeToString(BenchmarkData.serializer(), data)
-        val snbtDecodeResult = benchmark {
-            format.decodeFromString(BenchmarkData.serializer(), snbtString)
-        }
-
-        printBenchmarkResults(
-            testName = "Medium Data",
-            treeEncodeResult = treeEncodeResult,
-            treeDecodeResult = treeDecodeResult,
-            snbtEncodeResult = snbtEncodeResult,
-            snbtDecodeResult = snbtDecodeResult,
-        )
+        runBenchmarkSuite("Medium Data (1000 elements)", BenchmarkData.serializer(), benchmarkDataMedium)
     }
 
     @Test
     fun should_benchmark_large_data_serialization() {
-        val data = createBenchmarkData(10000)
-
-        println("=== Large Data Benchmark (10000 elements, $iterations iterations) ===")
-
-        val treeEncodeResult = benchmark {
-            format.encodeToNbtTag(BenchmarkData.serializer(), data)
-        }
-
-        val nbtTag = format.encodeToNbtTag(BenchmarkData.serializer(), data)
-        val treeDecodeResult = benchmark {
-            format.decodeFromNbtTag(BenchmarkData.serializer(), nbtTag)
-        }
-
-        val snbtEncodeResult = benchmark {
-            format.encodeToString(BenchmarkData.serializer(), data)
-        }
-
-        val snbtString = format.encodeToString(BenchmarkData.serializer(), data)
-        val snbtDecodeResult = benchmark {
-            format.decodeFromString(BenchmarkData.serializer(), snbtString)
-        }
-
-        printBenchmarkResults(
-            testName = "Large Data",
-            treeEncodeResult = treeEncodeResult,
-            treeDecodeResult = treeDecodeResult,
-            snbtEncodeResult = snbtEncodeResult,
-            snbtDecodeResult = snbtDecodeResult,
-        )
+        runBenchmarkSuite("Large Data (10000 elements)", BenchmarkData.serializer(), benchmarkDataLarge)
     }
 
     @Test
     fun should_benchmark_minecraft_like_data() {
-        val data = createMinecraftLikeData()
-
-        println("=== Minecraft-like Data Benchmark ($iterations iterations) ===")
-
-        val treeEncodeResult = benchmark {
-            format.encodeToNbtTag(MinecraftLikeData.serializer(), data)
-        }
-
-        val nbtTag = format.encodeToNbtTag(MinecraftLikeData.serializer(), data)
-        val treeDecodeResult = benchmark {
-            format.decodeFromNbtTag(MinecraftLikeData.serializer(), nbtTag)
-        }
-
-        val snbtEncodeResult = benchmark {
-            format.encodeToString(MinecraftLikeData.serializer(), data)
-        }
-
-        val snbtString = format.encodeToString(MinecraftLikeData.serializer(), data)
-        val snbtDecodeResult = benchmark {
-            format.decodeFromString(MinecraftLikeData.serializer(), snbtString)
-        }
-
-        printBenchmarkResults(
-            testName = "Minecraft-like",
-            treeEncodeResult = treeEncodeResult,
-            treeDecodeResult = treeDecodeResult,
-            snbtEncodeResult = snbtEncodeResult,
-            snbtDecodeResult = snbtDecodeResult,
-        )
+        runBenchmarkSuite("Minecraft-like Data", MinecraftLikeData.serializer(), minecraftLikeData)
     }
 
     @Test
     fun should_benchmark_complex_nbt_structure() {
-        val nbtData = createComplexNbtStructure()
+        val suiteResult = runCustomBenchmarkSuite(
+            name = "Complex NBT Structure",
+            treeEncodedProvider = { format.encodeToNbtTag(NbtTag.serializer(), complexNbtStructure) },
+            snbtEncodedProvider = { complexNbtStructure.toString() },
+            treeEncodeOperation = { format.encodeToNbtTag(NbtTag.serializer(), complexNbtStructure) },
+            treeDecodeOperation = { encoded -> format.decodeFromNbtTag(NbtTag.serializer(), encoded) },
+            snbtEncodeOperation = { complexNbtStructure.toString() },
+            snbtDecodeOperation = { encoded -> format.decodeFromString(NbtTag.serializer(), encoded) },
+        )
+        printBenchmarkResults(suiteResult)
+    }
 
-        println("=== Complex NBT Structure Benchmark ($iterations iterations) ===")
+    private fun <TTree, TSnbt> runCustomBenchmarkSuite(
+        name: String,
+        treeEncodedProvider: () -> TTree,
+        snbtEncodedProvider: () -> TSnbt,
+        treeEncodeOperation: () -> TTree,
+        treeDecodeOperation: (TTree) -> Any,
+        snbtEncodeOperation: () -> TSnbt,
+        snbtDecodeOperation: (TSnbt) -> Any,
+    ): BenchmarkSuiteResult {
+        println("=== $name Benchmark ===")
 
-        val treeEncodeResult = benchmark {
-            format.encodeToNbtTag(NbtTag.serializer(), nbtData)
-        }
+        val treeEncoded = treeEncodedProvider()
+        val snbtEncoded = snbtEncodedProvider()
 
-        val treeDecodeResult = benchmark {
-            format.decodeFromNbtTag(NbtTag.serializer(), nbtData)
-        }
-
-        val snbtEncodeResult = benchmark {
-            nbtData.toString()
-        }
-
-        val snbtString = nbtData.toString()
-        val snbtDecodeResult = benchmark {
-            format.decodeFromString(NbtTag.serializer(), snbtString)
-        }
-
-        printBenchmarkResults(
-            testName = "Complex NBT",
-            treeEncodeResult = treeEncodeResult,
-            treeDecodeResult = treeDecodeResult,
-            snbtEncodeResult = snbtEncodeResult,
-            snbtDecodeResult = snbtDecodeResult,
+        return BenchmarkSuiteResult(
+            suiteName = name,
+            treeEncodeResult = benchmark(treeEncodeOperation),
+            treeDecodeResult = benchmark { treeDecodeOperation(treeEncoded) },
+            snbtEncodeResult = benchmark(snbtEncodeOperation),
+            snbtDecodeResult = benchmark { snbtDecodeOperation(snbtEncoded) },
         )
     }
 
-    private fun printBenchmarkResults(
-        testName: String,
-        treeEncodeResult: BenchmarkResult,
-        treeDecodeResult: BenchmarkResult,
-        snbtEncodeResult: BenchmarkResult,
-        snbtDecodeResult: BenchmarkResult,
-    ) {
-        println("$testName Results:")
+    private fun printBenchmarkResults(suiteResult: BenchmarkSuiteResult) {
         println(
-            "  TreeNbt Encode: ${treeEncodeResult.averageTime} avg (min: ${treeEncodeResult.minTime}, max: ${treeEncodeResult.maxTime})",
+            "${suiteResult.suiteName} Results (warmup=${suiteResult.treeEncodeResult.warmupIterations}, measurement=${suiteResult.treeEncodeResult.measurementIterations}):",
+        )
+        printBenchmarkLine("TreeNbt Encode", suiteResult.treeEncodeResult)
+        printBenchmarkLine("TreeNbt Decode", suiteResult.treeDecodeResult)
+        printBenchmarkLine("SNBT Encode", suiteResult.snbtEncodeResult)
+        printBenchmarkLine("SNBT Decode", suiteResult.snbtDecodeResult)
+        println(
+            "  Encode Ratio (SNBT/Tree): ${suiteResult.snbtEncodeResult.averageTime.inWholeNanoseconds.toDouble() / suiteResult.treeEncodeResult.averageTime.inWholeNanoseconds}",
         )
         println(
-            "  TreeNbt Decode: ${treeDecodeResult.averageTime} avg (min: ${treeDecodeResult.minTime}, max: ${treeDecodeResult.maxTime})",
+            "  Decode Ratio (SNBT/Tree): ${suiteResult.snbtDecodeResult.averageTime.inWholeNanoseconds.toDouble() / suiteResult.treeDecodeResult.averageTime.inWholeNanoseconds}",
         )
+        println("  Blackhole checksum: $blackhole")
+    }
+
+    private fun printBenchmarkLine(name: String, result: BenchmarkResult) {
         println(
-            "  SNBT Encode:    ${snbtEncodeResult.averageTime} avg (min: ${snbtEncodeResult.minTime}, max: ${snbtEncodeResult.maxTime})",
+            "  $name: avg=${result.averageTime}, min=${result.minTime}, max=${result.maxTime}, total=${result.totalTime}",
         )
-        println(
-            "  SNBT Decode:    ${snbtDecodeResult.averageTime} avg (min: ${snbtDecodeResult.minTime}, max: ${snbtDecodeResult.maxTime})",
-        )
-        println(
-            "  TreeNbt vs SNBT Encode Ratio: ${snbtEncodeResult.averageTime.inWholeNanoseconds.toDouble() / treeEncodeResult.averageTime.inWholeNanoseconds}",
-        )
-        println(
-            "  TreeNbt vs SNBT Decode Ratio: ${snbtDecodeResult.averageTime.inWholeNanoseconds.toDouble() / treeDecodeResult.averageTime.inWholeNanoseconds}",
-        )
+    }
+
+    private companion object {
+        private var blackhole: Int = 0
     }
 }

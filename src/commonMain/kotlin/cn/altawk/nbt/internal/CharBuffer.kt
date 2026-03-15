@@ -39,6 +39,21 @@ internal class CharBuffer(private val sequence: CharSequence) {
     fun hasMore(offset: Int): Boolean = this.index + offset < sequence.length
 
     /**
+     * Get the current index position.
+     */
+    fun currentIndex(): Int = this.index
+
+    /**
+     * Get the character at the specified absolute index.
+     */
+    fun charAt(idx: Int): Char = sequence[idx]
+
+    /**
+     * Get a substring from the underlying sequence.
+     */
+    fun substring(startIndex: Int, endIndex: Int): String = sequence.substring(startIndex, endIndex)
+
+    /**
      * Search for the provided token, and advance the reader index past the `until` character.
      *
      * @param until case-insensitive token
@@ -92,14 +107,36 @@ internal class CharBuffer(private val sequence: CharSequence) {
         this.take()
     }
 
-    fun <R> tempt(action: CharBuffer.() -> R): R {
-        val newBuffer = CharBuffer(sequence)
-        newBuffer.index = this.index
-        return action(newBuffer)
+    /**
+     * Skip whitespace characters.
+     *
+     * @return this
+     */
+    fun skipWhitespace(): CharBuffer {
+        while (this.hasMore() && Character.isWhitespace(this.peek())) this.advance()
+        return this
     }
 
-    fun skipWhitespace(): CharBuffer = this.apply {
-        while (this.hasMore() && Character.isWhitespace(this.peek())) this.advance()
+    /**
+     * Peek at a character at the given offset, skipping whitespace from the current position.
+     * Does not modify the index.
+     *
+     * @param offset the number of non-whitespace characters to skip before peeking
+     * @return the character at the offset, or null if EOF
+     */
+    fun peekSkippingWhitespace(offset: Int): Char? {
+        var idx = this.index
+        var remaining = offset
+        while (idx < sequence.length) {
+            if (Character.isWhitespace(sequence[idx])) {
+                idx++
+                continue
+            }
+            if (remaining == 0) return sequence[idx]
+            remaining--
+            idx++
+        }
+        return null
     }
 
     @Throws(StringifiedNbtParseException::class)

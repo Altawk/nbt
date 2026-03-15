@@ -147,7 +147,13 @@ internal interface NbtReader {
 internal fun NbtReader.readByteArray(): ByteArray {
     val size = beginByteArray()
     val result = if (size == NbtReader.UNKNOWN_SIZE) {
-        buildList { while (beginByteArrayEntry()) add(readByte()) }.toByteArray()
+        var array = ByteArray(8)
+        var count = 0
+        while (beginByteArrayEntry()) {
+            if (count == array.size) array = array.copyOf(array.size * 2)
+            array[count++] = readByte()
+        }
+        if (count == array.size) array else array.copyOf(count)
     } else {
         ByteArray(size).also { array -> repeat(size) { array[it] = readByte() } }
     }
@@ -161,7 +167,13 @@ internal fun NbtReader.readByteArray(): ByteArray {
 internal fun NbtReader.readIntArray(): IntArray {
     val size = beginIntArray()
     val result = if (size == NbtReader.UNKNOWN_SIZE) {
-        buildList { while (beginIntArrayEntry()) add(readInt()) }.toIntArray()
+        var array = IntArray(8)
+        var count = 0
+        while (beginIntArrayEntry()) {
+            if (count == array.size) array = array.copyOf(array.size * 2)
+            array[count++] = readInt()
+        }
+        if (count == array.size) array else array.copyOf(count)
     } else {
         IntArray(size).also { array -> repeat(size) { array[it] = readInt() } }
     }
@@ -175,7 +187,13 @@ internal fun NbtReader.readIntArray(): IntArray {
 internal fun NbtReader.readLongArray(): LongArray {
     val size = beginLongArray()
     val result = if (size == NbtReader.UNKNOWN_SIZE) {
-        buildList { while (beginLongArrayEntry()) add(readLong()) }.toLongArray()
+        var array = LongArray(8)
+        var count = 0
+        while (beginLongArrayEntry()) {
+            if (count == array.size) array = array.copyOf(array.size * 2)
+            array[count++] = readLong()
+        }
+        if (count == array.size) array else array.copyOf(count)
     } else {
         LongArray(size).also { array -> repeat(size) { array[it] = readLong() } }
     }

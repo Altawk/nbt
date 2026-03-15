@@ -40,15 +40,16 @@ internal class StringifiedNbtReader(private val buffer: CharBuffer) : NbtReader 
         if (!buffer.skipWhitespace().hasMore()) buffer.makeError("Expected value, but got nothing")
         return when (buffer.peek()) {
             COMPOUND_BEGIN -> readCompoundTag()
-            ARRAY_BEGIN -> buffer.tempt {
-                advance()
-                val possibleType = skipWhitespace().take()
-                if (hasMore() && skipWhitespace().peek() == ARRAY_SIGNATURE_SEPARATOR) {
+            ARRAY_BEGIN -> {
+                // Lookahead to distinguish typed arrays [B; [I; [L; from plain lists [
+                val possibleType = buffer.peekSkippingWhitespace(1)
+                val possibleSeparator = if (possibleType != null) buffer.peekSkippingWhitespace(2) else null
+                if (possibleSeparator == ARRAY_SIGNATURE_SEPARATOR) {
                     when (possibleType) {
                         TYPE_BYTE_ARRAY -> NbtByteArray(readByteArray())
                         TYPE_INT_ARRAY -> NbtIntArray(readIntArray())
                         TYPE_LONG_ARRAY -> NbtLongArray(readLongArray())
-                        else -> buffer.makeError("Unknown array type '$possibleType' !")
+                        else -> readListTag()
                     }
                 } else readListTag()
             }
@@ -198,27 +199,52 @@ internal class StringifiedNbtReader(private val buffer: CharBuffer) : NbtReader 
      * @return a parsed value
      */
     private fun scalar(): Any {
-        val builder = StringBuilder()
-        var noLongerNumericAt = -1
         buffer.skipWhitespace()
+        val startIndex = buffer.currentIndex()
+        var hasEscape = false
+        var noLongerNumericAt = -1
+        var length = 0
+
         while (buffer.hasMore()) {
-            var current = buffer.peek()
-            if (current == ESCAPE_MARKER) { // 允许对下一个字符转义
+            val current = buffer.peek()
+            if (current == ESCAPE_MARKER) {
+                hasEscape = true
                 buffer.advance()
-                current = buffer.take()
+                buffer.advance()
+                length += 1 // only the escaped char counts
+                if (noLongerNumericAt == -1) noLongerNumericAt = length
             } else if (Tokens.id(current)) {
                 buffer.advance()
-            } else { // 结束当前值
+                length++
+                if (noLongerNumericAt == -1 && !Tokens.numeric(current)) {
+                    noLongerNumericAt = length
+                }
+            } else {
                 break
-            }
-            builder.append(current)
-            if (noLongerNumericAt == -1 && !Tokens.numeric(current)) {
-                noLongerNumericAt = builder.length
             }
         }
 
-        val length = builder.length
-        val built = builder.toString()
+        val built = if (hasEscape) {
+            // Slow path: rebuild string without escape markers
+            buildString(length) {
+                var idx = startIndex
+                val endIdx = buffer.currentIndex()
+                while (idx < endIdx) {
+                    val c = buffer.charAt(idx)
+                    if (c == ESCAPE_MARKER) {
+                        idx++
+                        if (idx < endIdx) append(buffer.charAt(idx))
+                    } else {
+                        append(c)
+                    }
+                    idx++
+                }
+            }
+        } else {
+            // Fast path: direct substring, no allocation beyond the string itself
+            buffer.substring(startIndex, buffer.currentIndex())
+        }
+
         if (noLongerNumericAt == length && length > 1) {
             when (built.last().lowercaseChar()) {
                 TYPE_BYTE -> return built.dropLast(1).toByteOrNull() ?: buffer.makeError("Expected Byte, but was '$built'")

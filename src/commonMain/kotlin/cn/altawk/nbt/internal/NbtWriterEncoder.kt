@@ -113,6 +113,7 @@ internal class NbtWriterEncoder(
             is NbtList -> {
                 writer.beginList((value).size)
                 for (element in value) {
+                    writer.beginListEntry()
                     encodeNbtTag(element)
                 }
                 writer.endList()

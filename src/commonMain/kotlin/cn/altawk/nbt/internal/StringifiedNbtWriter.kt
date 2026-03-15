@@ -27,11 +27,27 @@ import cn.altawk.nbt.internal.Tokens.VALUE_SEPARATOR
  * @since 2025/2/22 15:23
  */
 internal class StringifiedNbtWriter(private val builder: Appendable, private val prettyPrint: Boolean) : NbtWriter {
+
+    // State stack for nested structures
+    private val stateStack = ArrayDeque<WriterState>()
     private var firstEntry = false
     private var inArray = false
     private var level = 0
 
+    private class WriterState(val firstEntry: Boolean, val inArray: Boolean)
+
+    private fun pushState() {
+        stateStack.addLast(WriterState(firstEntry, inArray))
+    }
+
+    private fun popState() {
+        val state = stateStack.removeLast()
+        firstEntry = state.firstEntry
+        inArray = state.inArray
+    }
+
     private fun beginArray(prefix: String) {
+        pushState()
         builder.append(prefix)
         if (prettyPrint) builder.append(PRETTY_PRINT_SPACE)
 
@@ -41,6 +57,7 @@ internal class StringifiedNbtWriter(private val builder: Appendable, private val
     }
 
     private fun beginCollection(prefix: Char) {
+        pushState()
         builder.append(prefix)
 
         firstEntry = true
@@ -63,17 +80,13 @@ internal class StringifiedNbtWriter(private val builder: Appendable, private val
         level--
         appendPrettyNewLine()
         builder.append(suffix)
-
-        firstEntry = false
-        inArray = false
+        popState()
     }
 
     private fun endArray() {
         level--
         builder.append(ARRAY_END)
-
-        firstEntry = false
-        inArray = false
+        popState()
     }
 
     override fun beginCompound() = beginCollection(COMPOUND_BEGIN)
@@ -146,19 +159,44 @@ internal class StringifiedNbtWriter(private val builder: Appendable, private val
 
 internal fun Appendable.appendQuoted(value: String): Appendable = apply {
     append(DOUBLE_QUOTE)
-    value.forEach {
-        if (it == DOUBLE_QUOTE) append(ESCAPE_MARKER)
-        append(it)
+    var lastCopy = 0
+    val len = value.length
+    for (i in 0 until len) {
+        if (value[i] == DOUBLE_QUOTE) {
+            // Batch append everything before this quote
+            if (i > lastCopy) append(value, lastCopy, i)
+            append(ESCAPE_MARKER)
+            lastCopy = i // the quote itself will be included in the next batch
+        }
+    }
+    // Append remaining
+    if (lastCopy == 0) {
+        append(value) // no escapes needed, append whole string at once
+    } else if (lastCopy < len) {
+        append(value, lastCopy, len)
     }
     append(DOUBLE_QUOTE)
 }
 
 internal fun Appendable.appendValid(value: String): Appendable {
+    if (value.isEmpty()) return append(DOUBLE_QUOTE).append(DOUBLE_QUOTE)
+
+    // Single pass: determine all properties at once
+    var allId = true
+    var hasDoubleQuote = false
+    var hasSingleQuote = false
+    for (c in value) {
+        if (allId && !Tokens.id(c)) allId = false
+        if (c == DOUBLE_QUOTE) hasDoubleQuote = true
+        if (c == SINGLE_QUOTE) hasSingleQuote = true
+        // Early exit: if we know we need full escaping, stop scanning
+        if (!allId && hasDoubleQuote && hasSingleQuote) break
+    }
+
     return when {
-        value.isEmpty() -> append(DOUBLE_QUOTE).append(DOUBLE_QUOTE)
-        value.all { Tokens.id(it) } -> append(value)
-        !value.contains(DOUBLE_QUOTE) -> append(DOUBLE_QUOTE).append(value).append(DOUBLE_QUOTE)
-        !value.contains(SINGLE_QUOTE) -> append(SINGLE_QUOTE).append(value).append(SINGLE_QUOTE)
+        allId -> append(value)
+        !hasDoubleQuote -> append(DOUBLE_QUOTE).append(value).append(DOUBLE_QUOTE)
+        !hasSingleQuote -> append(SINGLE_QUOTE).append(value).append(SINGLE_QUOTE)
         else -> appendQuoted(value)
     }
 }
