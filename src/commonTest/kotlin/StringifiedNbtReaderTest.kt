@@ -18,34 +18,89 @@ class StringifiedNbtReaderTest {
         )
 
         when (expected) {
-            is NbtByte -> assertEquals(expected.content, NbtFormat.decodeFromString(Byte.serializer(), snbt))
-            is NbtShort -> assertEquals(expected.content, NbtFormat.decodeFromString(Short.serializer(), snbt))
-            is NbtInt -> assertEquals(expected.content, NbtFormat.decodeFromString(Int.serializer(), snbt))
-            is NbtLong -> assertEquals(expected.content, NbtFormat.decodeFromString(Long.serializer(), snbt))
-            is NbtFloat -> assertEquals(expected.content, NbtFormat.decodeFromString(Float.serializer(), snbt))
-            is NbtDouble -> assertEquals(expected.content, NbtFormat.decodeFromString(Double.serializer(), snbt))
-            is NbtByteArray -> assertContentEquals(expected.content, NbtFormat.decodeFromString(ByteArraySerializer(), snbt))
-            is NbtIntArray -> assertContentEquals(expected.content, NbtFormat.decodeFromString(IntArraySerializer(), snbt))
-            is NbtLongArray -> assertContentEquals(expected.content, NbtFormat.decodeFromString(LongArraySerializer(), snbt))
-            is NbtString -> assertEquals(expected.content, NbtFormat.decodeFromString(String.serializer(), snbt))
-            is NbtCompound -> assertEquals(expected.toMap(), NbtFormat.decodeFromString(MapSerializer(String.serializer(), NbtTag.serializer()), snbt))
-            is NbtList -> assertEquals(expected.toList(), NbtFormat.decodeFromString(ListSerializer(NbtTag.serializer()), snbt))
+            is NbtByte -> {
+                assertEquals(expected.content, NbtFormat.decodeFromString(Byte.serializer(), snbt))
+            }
+
+            is NbtShort -> {
+                assertEquals(expected.content, NbtFormat.decodeFromString(Short.serializer(), snbt))
+            }
+
+            is NbtInt -> {
+                assertEquals(expected.content, NbtFormat.decodeFromString(Int.serializer(), snbt))
+            }
+
+            is NbtLong -> {
+                assertEquals(expected.content, NbtFormat.decodeFromString(Long.serializer(), snbt))
+            }
+
+            is NbtFloat -> {
+                assertEquals(expected.content, NbtFormat.decodeFromString(Float.serializer(), snbt))
+            }
+
+            is NbtDouble -> {
+                assertEquals(expected.content, NbtFormat.decodeFromString(Double.serializer(), snbt))
+            }
+
+            is NbtByteArray -> {
+                assertContentEquals(
+                    expected.content,
+                    NbtFormat.decodeFromString(ByteArraySerializer(), snbt),
+                )
+            }
+
+            is NbtIntArray -> {
+                assertContentEquals(
+                    expected.content,
+                    NbtFormat.decodeFromString(IntArraySerializer(), snbt),
+                )
+            }
+
+            is NbtLongArray -> {
+                assertContentEquals(
+                    expected.content,
+                    NbtFormat.decodeFromString(LongArraySerializer(), snbt),
+                )
+            }
+
+            is NbtString -> {
+                assertEquals(expected.content, NbtFormat.decodeFromString(String.serializer(), snbt))
+            }
+
+            is NbtCompound -> {
+                assertEquals(
+                    expected.toMap(),
+                    NbtFormat.decodeFromString(
+                        MapSerializer(String.serializer(), NbtTag.serializer()),
+                        snbt,
+                    ),
+                )
+            }
+
+            is NbtList -> {
+                assertEquals(
+                    expected.toList(),
+                    NbtFormat.decodeFromString(ListSerializer(NbtTag.serializer()), snbt),
+                )
+            }
         }
     }
 
     @Test
-    fun Should_read_Byte_correctly() {
+    fun should_read_byte_correctly() {
         check(NbtByte(0), "0b")
         check(NbtByte(Byte.MIN_VALUE), "${Byte.MIN_VALUE}b")
         check(NbtByte(Byte.MAX_VALUE), "${Byte.MAX_VALUE}b")
         check(NbtByte(0), "false")
         check(NbtByte(1), "true")
+        check(NbtByte(0), "FALSE")
+        check(NbtByte(1), "TrUe")
 
         check(NbtByte(0), " 0b ")
     }
 
     @Test
-    fun Should_read_Short_correctly() {
+    fun should_read_short_correctly() {
         check(NbtShort(0), "0s")
         check(NbtShort(Short.MIN_VALUE), "${Short.MIN_VALUE}s")
         check(NbtShort(Short.MAX_VALUE), "${Short.MAX_VALUE}s")
@@ -54,7 +109,7 @@ class StringifiedNbtReaderTest {
     }
 
     @Test
-    fun Should_read_Int_correctly() {
+    fun should_read_int_correctly() {
         check(NbtInt(0), "0")
         check(NbtInt(Int.MIN_VALUE), "${Int.MIN_VALUE}")
         check(NbtInt(Int.MAX_VALUE), "${Int.MAX_VALUE}")
@@ -63,7 +118,7 @@ class StringifiedNbtReaderTest {
     }
 
     @Test
-    fun Should_read_Long_correctly() {
+    fun should_read_long_correctly() {
         check(NbtLong(0), "0L")
         check(NbtLong(Long.MIN_VALUE), "${Long.MIN_VALUE}L")
         check(NbtLong(Long.MAX_VALUE), "${Long.MAX_VALUE}L")
@@ -72,7 +127,7 @@ class StringifiedNbtReaderTest {
     }
 
     @Test
-    fun Should_read_Float_correctly() {
+    fun should_read_float_correctly() {
         check(NbtFloat(0.0f), "0f")
         check(NbtFloat(0.1f), "0.1f")
         check(NbtFloat(0.1f), ".1f")
@@ -88,7 +143,7 @@ class StringifiedNbtReaderTest {
     }
 
     @Test
-    fun Should_read_Double_correctly() {
+    fun should_read_double_correctly() {
         check(NbtDouble(0.0), "0d")
         check(NbtDouble(0.1), "0.1d")
         check(NbtDouble(0.1), ".1d")
@@ -114,7 +169,7 @@ class StringifiedNbtReaderTest {
     }
 
     @Test
-    fun Should_parse_ByteArray_correctly() {
+    fun should_parse_byte_array_correctly() {
         check(NbtByteArray(byteArrayOf()), "[B;]")
         check(NbtByteArray(byteArrayOf(1, 2, 3)), "[B; 1b, 2b, 3b]")
 
@@ -122,7 +177,7 @@ class StringifiedNbtReaderTest {
     }
 
     @Test
-    fun Should_parse_IntArray_correctly() {
+    fun should_parse_int_array_correctly() {
         check(NbtIntArray(intArrayOf()), "[I;]")
         check(NbtIntArray(intArrayOf(1, 2, 3)), "[I; 1, 2, 3]")
 
@@ -130,7 +185,7 @@ class StringifiedNbtReaderTest {
     }
 
     @Test
-    fun Should_parse_LongArray_correctly() {
+    fun should_parse_long_array_correctly() {
         check(NbtLongArray(longArrayOf()), "[L;]")
         check(NbtLongArray(longArrayOf(1, 2, 3)), "[L; 1L, 2L, 3L]")
 
@@ -138,7 +193,7 @@ class StringifiedNbtReaderTest {
     }
 
     @Test
-    fun Should_parse_String_correctly() {
+    fun should_parse_string_correctly() {
         check(NbtString(""), "''")
         check(NbtString(""), "\"\"")
         check(NbtString("one"), "one")
@@ -149,11 +204,12 @@ class StringifiedNbtReaderTest {
         check(NbtString("\""), "'\"'")
         check(NbtString("'"), "'\\''")
         check(NbtString("\""), "\"\\\"\"")
+        check(NbtString("escaped \"quote\" and slash"), "\"escaped \\\"quote\\\" and slash\"")
     }
 
     @Test
-    fun Should_parse_List_correctly() {
-        check(NbtList { }, "[]")
+    fun should_parse_list_correctly() {
+        check(NbtList {}, "[]")
         check(NbtList { add(0.toByte()) }, "[0b]")
         check(NbtList { add(0.toShort()) }, "[0s]")
         check(NbtList { add(0) }, "[0]")
@@ -163,18 +219,24 @@ class StringifiedNbtReaderTest {
         check(NbtList { add(byteArrayOf()) }, "[[B;]]")
         check(NbtList { add(intArrayOf()) }, "[[I;]]")
         check(NbtList { add(longArrayOf()) }, "[[L;]]")
-        check(NbtList { addList { } }, "[[]]")
-        check(NbtList { addCompound { } }, "[{}]")
+        check(NbtList { addList {} }, "[[]]")
+        check(NbtList { addCompound {} }, "[{}]")
 
-        check(NbtList {
-            addList { add(1) }
-            addList { add(2.toByte()); add(3.toByte()) }
-        }, " [ [ 1 ] , [ 2b , 3b ] ] ")
+        check(
+            NbtList {
+                addList { add(1) }
+                addList {
+                    add(2.toByte())
+                    add(3.toByte())
+                }
+            },
+            " [ [ 1 ] , [ 2b , 3b ] ] ",
+        )
     }
 
     @Test
-    fun Should_parse_Compound_correctly() {
-        check(NbtCompound { }, "{}")
+    fun should_parse_compound_correctly() {
+        check(NbtCompound {}, "{}")
         check(NbtCompound { put("one", 1) }, "{one: 1}")
         check(NbtCompound { put("", 0) }, "{'': 0}")
         check(NbtCompound { put("", 0.toByte()) }, "{\"\": 0b}")
@@ -190,22 +252,87 @@ class StringifiedNbtReaderTest {
     }
 
     @Test
-    fun Should_fail_on_missing_key() {
-        assertFailsWith<StringifiedNbtParseException> { NbtFormat.decodeFromString(NbtTag.serializer(), "{ : value}") }
+    fun should_round_trip_nested_compound_structure() {
+        val expected = NbtCompound {
+            put("name", "root")
+            putList("items") {
+                addCompound {
+                    put("id", 1)
+                    putList("flags") {
+                        add(1.toByte())
+                        add(0.toByte())
+                    }
+                }
+                addCompound {
+                    put("id", 2)
+                    putCompound("meta") {
+                        put("enabled", 1.toByte())
+                        put("title", "demo")
+                    }
+                }
+            }
+        }
+        val snbt = expected.toString()
+
+        check(expected, snbt)
     }
 
     @Test
-    fun Should_fail_on_missing_value() {
-        assertFailsWith<StringifiedNbtParseException> { NbtFormat.decodeFromString(NbtTag.serializer(), "{ key: }") }
+    fun should_fail_on_missing_key() {
+        assertFailsWith<StringifiedNbtParseException> {
+            NbtFormat.decodeFromString(NbtTag.serializer(), "{ : value}")
+        }
     }
 
     @Test
-    fun Should_fail_if_only_whitespace() {
-        assertFailsWith<StringifiedNbtParseException> { NbtFormat.decodeFromString(NbtTag.serializer(), "") }
-        assertFailsWith<StringifiedNbtParseException> { NbtFormat.decodeFromString(NbtTag.serializer(), "    ") }
-
-        assertFailsWith<StringifiedNbtParseException> { NbtFormat.decodeFromString<String>("") }
-        assertFailsWith<StringifiedNbtParseException> { NbtFormat.decodeFromString<String>("    ") }
+    fun should_fail_on_missing_value() {
+        assertFailsWith<StringifiedNbtParseException> {
+            NbtFormat.decodeFromString(NbtTag.serializer(), "{ key: }")
+        }
     }
 
+    @Test
+    fun should_fail_if_only_whitespace() {
+        assertFailsWith<StringifiedNbtParseException> {
+            NbtFormat.decodeFromString(NbtTag.serializer(), "")
+        }
+        assertFailsWith<StringifiedNbtParseException> {
+            NbtFormat.decodeFromString(NbtTag.serializer(), "    ")
+        }
+
+        assertFailsWith<StringifiedNbtParseException> {
+            NbtFormat.decodeFromString<String>("")
+        }
+        assertFailsWith<StringifiedNbtParseException> {
+            NbtFormat.decodeFromString<String>("    ")
+        }
+    }
+
+    @Test
+    fun should_fail_on_unclosed_string() {
+        assertFailsWith<StringifiedNbtParseException> {
+            NbtFormat.decodeFromString(NbtTag.serializer(), "\"unterminated")
+        }
+    }
+
+    @Test
+    fun should_fail_on_unclosed_list() {
+        assertFailsWith<Throwable> {
+            NbtFormat.decodeFromString(NbtTag.serializer(), "[1b, 2b")
+        }
+    }
+
+    @Test
+    fun should_fail_on_unclosed_compound() {
+        assertFailsWith<Throwable> {
+            NbtFormat.decodeFromString(NbtTag.serializer(), "{key: 1b")
+        }
+    }
+
+    @Test
+    fun should_fail_on_invalid_array_type() {
+        assertFailsWith<StringifiedNbtParseException> {
+            NbtFormat.decodeFromString(NbtTag.serializer(), "[Q; 1]")
+        }
+    }
 }

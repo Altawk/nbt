@@ -11,8 +11,7 @@ import kotlin.test.assertEquals
 class NbtReaderTest {
 
     @Test
-    fun Decode() {
-
+    fun should_decode_nbt_tag_to_stringified_output() {
         val tag = NbtCompound {
             put("name", "Good")
             putList("list") {

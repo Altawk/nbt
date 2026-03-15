@@ -1,6 +1,6 @@
 [versions]
-kotlin = "2.1.0"
-serialization = "1.8.0"
+kotlin = "2.3.0"
+serialization = "1.9.0"
 
 [libraries]
 serialization-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-core", version.ref = "serialization" }

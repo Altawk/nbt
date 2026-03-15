@@ -6,24 +6,23 @@ import kotlin.time.Duration
 import kotlin.time.measureTime
 
 /**
- * Performance benchmark tests for NBT encoding/decoding
- * These tests measure and compare performance characteristics
+ * Performance benchmark tests for NBT encoding/decoding.
+ * These tests measure and compare performance characteristics.
  */
 class NbtPerformanceBenchmark {
 
-    val iterations: Int = 100
+    private val iterations: Int = 100
 
-    private val format = NbtFormat {
-    }
+    private val format = NbtFormat {}
 
     /**
-     * Data class to store benchmark timing results
+     * Data class to store benchmark timing results.
      */
     data class BenchmarkResult(
         val totalTime: Duration,
         val averageTime: Duration,
         val minTime: Duration,
-        val maxTime: Duration
+        val maxTime: Duration,
     )
 
     @Serializable
@@ -33,7 +32,7 @@ class NbtPerformanceBenchmark {
         val values: List<Double>,
         val metadata: Map<String, String>,
         val flags: List<Boolean>,
-        val coordinates: List<Triple<Double, Double, Double>>
+        val coordinates: List<Triple<Double, Double, Double>>,
     )
 
     @Serializable
@@ -44,7 +43,7 @@ class NbtPerformanceBenchmark {
         val inventory: List<ItemStack>,
         val position: Position,
         val gameMode: String,
-        val achievements: Map<String, Boolean>
+        val achievements: Map<String, Boolean>,
     )
 
     @Serializable
@@ -52,7 +51,7 @@ class NbtPerformanceBenchmark {
         val id: String,
         val count: Int,
         val damage: Short,
-        val enchantments: Map<String, Int>
+        val enchantments: Map<String, Int>,
     )
 
     @Serializable
@@ -61,7 +60,7 @@ class NbtPerformanceBenchmark {
         val y: Double,
         val z: Double,
         val yaw: Float,
-        val pitch: Float
+        val pitch: Float,
     )
 
     private fun createBenchmarkData(size: Int): BenchmarkData {
@@ -71,7 +70,7 @@ class NbtPerformanceBenchmark {
             values = (1..size).map { it * 0.1 },
             metadata = (1..size / 10).associate { "key_$it" to "value_$it" },
             flags = (1..size / 5).map { it % 2 == 0 },
-            coordinates = (1..size / 20).map { Triple(it.toDouble(), it * 2.0, it * 3.0) }
+            coordinates = (1..size / 20).map { Triple(it.toDouble(), it * 2.0, it * 3.0) },
         )
     }
 
@@ -87,8 +86,8 @@ class NbtPerformanceBenchmark {
                     damage = (slot % 100).toShort(),
                     enchantments = mapOf(
                         "sharpness" to slot % 5 + 1,
-                        "unbreaking" to slot % 3 + 1
-                    )
+                        "unbreaking" to slot % 3 + 1,
+                    ),
                 )
             },
             position = Position(
@@ -96,10 +95,10 @@ class NbtPerformanceBenchmark {
                 y = 64.0,
                 z = -789.012,
                 yaw = 45.0f,
-                pitch = -30.0f
+                pitch = -30.0f,
             ),
             gameMode = "survival",
-            achievements = (1..50).associate { "achievement_$it" to (it % 2 == 0) }
+            achievements = (1..50).associate { "achievement_$it" to (it % 2 == 0) },
         )
     }
 
@@ -136,12 +135,25 @@ class NbtPerformanceBenchmark {
 
                         put("stats", intArrayOf(i, i * 2, i * 3, i * 4, i * 5))
                         put(
-                            "uuid", byteArrayOf(
-                                i.toByte(), (i + 1).toByte(), (i + 2).toByte(), (i + 3).toByte(),
-                                (i + 4).toByte(), (i + 5).toByte(), (i + 6).toByte(), (i + 7).toByte(),
-                                (i + 8).toByte(), (i + 9).toByte(), (i + 10).toByte(), (i + 11).toByte(),
-                                (i + 12).toByte(), (i + 13).toByte(), (i + 14).toByte(), (i + 15).toByte()
-                            )
+                            "uuid",
+                            byteArrayOf(
+                                i.toByte(),
+                                (i + 1).toByte(),
+                                (i + 2).toByte(),
+                                (i + 3).toByte(),
+                                (i + 4).toByte(),
+                                (i + 5).toByte(),
+                                (i + 6).toByte(),
+                                (i + 7).toByte(),
+                                (i + 8).toByte(),
+                                (i + 9).toByte(),
+                                (i + 10).toByte(),
+                                (i + 11).toByte(),
+                                (i + 12).toByte(),
+                                (i + 13).toByte(),
+                                (i + 14).toByte(),
+                                (i + 15).toByte(),
+                            ),
                         )
                     }
                 }
@@ -169,15 +181,13 @@ class NbtPerformanceBenchmark {
     }
 
     /**
-     * Execute a benchmark operation multiple times and collect timing statistics
+     * Execute a benchmark operation multiple times and collect timing statistics.
      */
     private fun benchmark(operation: () -> Unit): BenchmarkResult {
         val times = mutableListOf<Duration>()
 
         repeat(iterations) {
-            val time = measureTime {
-                operation()
-            }
+            val time = measureTime(operation)
             times.add(time)
         }
 
@@ -190,38 +200,40 @@ class NbtPerformanceBenchmark {
     }
 
     @Test
-    fun benchmarkSmallDataSerialization() {
+    fun should_benchmark_small_data_serialization() {
         val data = createBenchmarkData(100)
 
         println("=== Small Data Benchmark (100 elements, $iterations iterations) ===")
 
-        // TreeNbt encoding
         val treeEncodeResult = benchmark {
             format.encodeToNbtTag(BenchmarkData.serializer(), data)
         }
 
-        // TreeNbt decoding
         val nbtTag = format.encodeToNbtTag(BenchmarkData.serializer(), data)
         val treeDecodeResult = benchmark {
             format.decodeFromNbtTag(BenchmarkData.serializer(), nbtTag)
         }
 
-        // SNBT encoding
         val snbtEncodeResult = benchmark {
             format.encodeToString(BenchmarkData.serializer(), data)
         }
 
-        // SNBT decoding
         val snbtString = format.encodeToString(BenchmarkData.serializer(), data)
         val snbtDecodeResult = benchmark {
             format.decodeFromString(BenchmarkData.serializer(), snbtString)
         }
 
-        printBenchmarkResults("Small Data", treeEncodeResult, treeDecodeResult, snbtEncodeResult, snbtDecodeResult)
+        printBenchmarkResults(
+            testName = "Small Data",
+            treeEncodeResult = treeEncodeResult,
+            treeDecodeResult = treeDecodeResult,
+            snbtEncodeResult = snbtEncodeResult,
+            snbtDecodeResult = snbtDecodeResult,
+        )
     }
 
     @Test
-    fun benchmarkMediumDataSerialization() {
+    fun should_benchmark_medium_data_serialization() {
         val data = createBenchmarkData(1000)
 
         println("=== Medium Data Benchmark (1000 elements, $iterations iterations) ===")
@@ -244,11 +256,17 @@ class NbtPerformanceBenchmark {
             format.decodeFromString(BenchmarkData.serializer(), snbtString)
         }
 
-        printBenchmarkResults("Medium Data", treeEncodeResult, treeDecodeResult, snbtEncodeResult, snbtDecodeResult)
+        printBenchmarkResults(
+            testName = "Medium Data",
+            treeEncodeResult = treeEncodeResult,
+            treeDecodeResult = treeDecodeResult,
+            snbtEncodeResult = snbtEncodeResult,
+            snbtDecodeResult = snbtDecodeResult,
+        )
     }
 
     @Test
-    fun benchmarkLargeDataSerialization() {
+    fun should_benchmark_large_data_serialization() {
         val data = createBenchmarkData(10000)
 
         println("=== Large Data Benchmark (10000 elements, $iterations iterations) ===")
@@ -271,11 +289,17 @@ class NbtPerformanceBenchmark {
             format.decodeFromString(BenchmarkData.serializer(), snbtString)
         }
 
-        printBenchmarkResults("Large Data", treeEncodeResult, treeDecodeResult, snbtEncodeResult, snbtDecodeResult)
+        printBenchmarkResults(
+            testName = "Large Data",
+            treeEncodeResult = treeEncodeResult,
+            treeDecodeResult = treeDecodeResult,
+            snbtEncodeResult = snbtEncodeResult,
+            snbtDecodeResult = snbtDecodeResult,
+        )
     }
 
     @Test
-    fun benchmarkMinecraftLikeData() {
+    fun should_benchmark_minecraft_like_data() {
         val data = createMinecraftLikeData()
 
         println("=== Minecraft-like Data Benchmark ($iterations iterations) ===")
@@ -298,11 +322,17 @@ class NbtPerformanceBenchmark {
             format.decodeFromString(MinecraftLikeData.serializer(), snbtString)
         }
 
-        printBenchmarkResults("Minecraft-like", treeEncodeResult, treeDecodeResult, snbtEncodeResult, snbtDecodeResult)
+        printBenchmarkResults(
+            testName = "Minecraft-like",
+            treeEncodeResult = treeEncodeResult,
+            treeDecodeResult = treeDecodeResult,
+            snbtEncodeResult = snbtEncodeResult,
+            snbtDecodeResult = snbtDecodeResult,
+        )
     }
 
     @Test
-    fun benchmarkComplexNbtStructure() {
+    fun should_benchmark_complex_nbt_structure() {
         val nbtData = createComplexNbtStructure()
 
         println("=== Complex NBT Structure Benchmark ($iterations iterations) ===")
@@ -324,7 +354,13 @@ class NbtPerformanceBenchmark {
             format.decodeFromString(NbtTag.serializer(), snbtString)
         }
 
-        printBenchmarkResults("Complex NBT", treeEncodeResult, treeDecodeResult, snbtEncodeResult, snbtDecodeResult)
+        printBenchmarkResults(
+            testName = "Complex NBT",
+            treeEncodeResult = treeEncodeResult,
+            treeDecodeResult = treeDecodeResult,
+            snbtEncodeResult = snbtEncodeResult,
+            snbtDecodeResult = snbtDecodeResult,
+        )
     }
 
     private fun printBenchmarkResults(
@@ -332,14 +368,26 @@ class NbtPerformanceBenchmark {
         treeEncodeResult: BenchmarkResult,
         treeDecodeResult: BenchmarkResult,
         snbtEncodeResult: BenchmarkResult,
-        snbtDecodeResult: BenchmarkResult
+        snbtDecodeResult: BenchmarkResult,
     ) {
         println("$testName Results:")
-        println("  TreeNbt Encode: ${treeEncodeResult.averageTime} avg (min: ${treeEncodeResult.minTime}, max: ${treeEncodeResult.maxTime})")
-        println("  TreeNbt Decode: ${treeDecodeResult.averageTime} avg (min: ${treeDecodeResult.minTime}, max: ${treeDecodeResult.maxTime})")
-        println("  SNBT Encode:    ${snbtEncodeResult.averageTime} avg (min: ${snbtEncodeResult.minTime}, max: ${snbtEncodeResult.maxTime})")
-        println("  SNBT Decode:    ${snbtDecodeResult.averageTime} avg (min: ${snbtDecodeResult.minTime}, max: ${snbtDecodeResult.maxTime})")
-        println("  TreeNbt vs SNBT Encode Ratio: ${snbtEncodeResult.averageTime.inWholeNanoseconds.toDouble() / treeEncodeResult.averageTime.inWholeNanoseconds}")
-        println("  TreeNbt vs SNBT Decode Ratio: ${snbtDecodeResult.averageTime.inWholeNanoseconds.toDouble() / treeDecodeResult.averageTime.inWholeNanoseconds}")
+        println(
+            "  TreeNbt Encode: ${treeEncodeResult.averageTime} avg (min: ${treeEncodeResult.minTime}, max: ${treeEncodeResult.maxTime})",
+        )
+        println(
+            "  TreeNbt Decode: ${treeDecodeResult.averageTime} avg (min: ${treeDecodeResult.minTime}, max: ${treeDecodeResult.maxTime})",
+        )
+        println(
+            "  SNBT Encode:    ${snbtEncodeResult.averageTime} avg (min: ${snbtEncodeResult.minTime}, max: ${snbtEncodeResult.maxTime})",
+        )
+        println(
+            "  SNBT Decode:    ${snbtDecodeResult.averageTime} avg (min: ${snbtDecodeResult.minTime}, max: ${snbtDecodeResult.maxTime})",
+        )
+        println(
+            "  TreeNbt vs SNBT Encode Ratio: ${snbtEncodeResult.averageTime.inWholeNanoseconds.toDouble() / treeEncodeResult.averageTime.inWholeNanoseconds}",
+        )
+        println(
+            "  TreeNbt vs SNBT Decode Ratio: ${snbtDecodeResult.averageTime.inWholeNanoseconds.toDouble() / treeDecodeResult.averageTime.inWholeNanoseconds}",
+        )
     }
 }
