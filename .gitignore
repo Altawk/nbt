@@ -12,3 +12,5 @@
 # Gradle files
 build/
 .gradle/
+.narrafork/
+.worktrees/
