@@ -28,14 +28,13 @@ import cn.altawk.nbt.internal.Tokens.VALUE_SEPARATOR
  */
 internal class StringifiedNbtWriter(private val builder: Appendable, private val prettyPrint: Boolean) : NbtWriter {
 
-    // State stack: pairs of (firstEntry, inArray) packed as two booleans per entry
     private val firstEntryStack = ArrayDeque<Boolean>()
-    private val inArrayStack = ArrayDeque<Boolean>()
+    private var inArray = false
     private var level = 0
 
     private fun beginArray(prefix: String) {
         firstEntryStack.addLast(true)
-        inArrayStack.addLast(true)
+        inArray = true
         builder.append(prefix)
         if (prettyPrint) builder.append(PRETTY_PRINT_SPACE)
         level++
@@ -43,7 +42,7 @@ internal class StringifiedNbtWriter(private val builder: Appendable, private val
 
     private fun beginCollection(prefix: Char) {
         firstEntryStack.addLast(true)
-        inArrayStack.addLast(false)
+        inArray = false
         builder.append(prefix)
         level++
     }
@@ -51,10 +50,10 @@ internal class StringifiedNbtWriter(private val builder: Appendable, private val
     private fun beginCollectionEntry() {
         if (!firstEntryStack.last()) {
             builder.append(VALUE_SEPARATOR)
-            if (prettyPrint && inArrayStack.last()) builder.append(PRETTY_PRINT_SPACE)
+            if (prettyPrint && inArray) builder.append(PRETTY_PRINT_SPACE)
         }
 
-        if (prettyPrint && !inArrayStack.last()) appendPrettyNewLine()
+        if (prettyPrint && !inArray) appendPrettyNewLine()
 
         firstEntryStack[firstEntryStack.lastIndex] = false
     }
@@ -64,14 +63,14 @@ internal class StringifiedNbtWriter(private val builder: Appendable, private val
         if (!firstEntryStack.last()) appendPrettyNewLine() // skip newline for empty collections
         builder.append(suffix)
         firstEntryStack.removeLast()
-        inArrayStack.removeLast()
+        inArray = false
     }
 
     private fun endArray() {
         level--
         builder.append(ARRAY_END)
         firstEntryStack.removeLast()
-        inArrayStack.removeLast()
+        inArray = false
     }
 
     override fun beginCompound() = beginCollection(COMPOUND_BEGIN)
@@ -106,7 +105,7 @@ internal class StringifiedNbtWriter(private val builder: Appendable, private val
     override fun endLongArray() = endArray()
 
     override fun writeByte(value: Byte) {
-        builder.append(value.toString()).append(if (inArrayStack.last()) TYPE_BYTE_ARRAY else TYPE_BYTE)
+        builder.append(value.toString()).append(if (inArray) TYPE_BYTE_ARRAY else TYPE_BYTE)
     }
 
     override fun writeLong(value: Long) {

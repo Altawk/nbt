@@ -325,13 +325,6 @@ class NbtPerformanceBenchmark {
         printBenchmarkLine("TreeNbt Decode", suiteResult.treeDecodeResult)
         printBenchmarkLine("SNBT Encode", suiteResult.snbtEncodeResult)
         printBenchmarkLine("SNBT Decode", suiteResult.snbtDecodeResult)
-        println(
-            "  Encode Ratio (SNBT/Tree): ${suiteResult.snbtEncodeResult.averageTime.inWholeNanoseconds.toDouble() / suiteResult.treeEncodeResult.averageTime.inWholeNanoseconds}",
-        )
-        println(
-            "  Decode Ratio (SNBT/Tree): ${suiteResult.snbtDecodeResult.averageTime.inWholeNanoseconds.toDouble() / suiteResult.treeDecodeResult.averageTime.inWholeNanoseconds}",
-        )
-        println("  Blackhole checksum: $blackhole")
     }
 
     private fun printBenchmarkLine(name: String, result: BenchmarkResult) {
