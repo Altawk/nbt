@@ -200,14 +200,15 @@ internal class StringifiedNbtReader(private val buffer: CharBuffer) : NbtReader 
     private fun scalar(): Any {
         val builder = StringBuilder()
         var noLongerNumericAt = -1
-        while (buffer.skipWhitespace().hasMore()) {
+        buffer.skipWhitespace()
+        while (buffer.hasMore()) {
             var current = buffer.peek()
-            if (current == ESCAPE_MARKER) { // escape -- we are significantly more lenient than original format at the moment
+            if (current == ESCAPE_MARKER) { // 允许对下一个字符转义
                 buffer.advance()
                 current = buffer.take()
             } else if (Tokens.id(current)) {
                 buffer.advance()
-            } else { // end of value
+            } else { // 结束当前值
                 break
             }
             builder.append(current)
@@ -235,11 +236,10 @@ internal class StringifiedNbtReader(private val buffer: CharBuffer) : NbtReader 
                     if (doubleValue.isFinite()) return doubleValue
                 }
             }
-        } else if (noLongerNumericAt == -1) { // if we run out of content without an explicit value separator, then we're either an integer or string tag -- all others have a character at the end
+        } else if (noLongerNumericAt == -1) { // 没有后缀，则可能是整数或双精度
             val number = built.toIntOrNull()
-            // if the string is a valid representation of a number.
             if (number != null) return number else {
-                if (built.indexOf('.') != -1) { // see if we have an unsuffixed double; always needs a dot
+                if (built.indexOf('.') != -1) { // 无后缀 double 必须包含 '.'
                     return built.toDoubleOrNull() ?: buffer.makeError("Expected Double, but was '$built'")
                 }
             }

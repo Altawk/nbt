@@ -64,7 +64,7 @@ public class NbtCompound(
     /**
      * Clone the tag shallowly.
      */
-    public fun cloneShallow(): NbtCompound = NbtCompound().apply { putAll(this.content) }
+    public fun cloneShallow(): NbtCompound = NbtCompound().apply { putAll(this@NbtCompound.content) }
 
     /**
      * Get the string representation of the tag.

@@ -151,7 +151,7 @@ internal fun NbtWriter.writeIntArray(value: IntArray) {
 internal fun NbtWriter.writeLongArray(value: LongArray) {
     beginLongArray(value.size)
     for (l in value) {
-        beginIntArrayEntry()
+        beginLongArrayEntry()
         writeLong(l)
     }
     endLongArray()

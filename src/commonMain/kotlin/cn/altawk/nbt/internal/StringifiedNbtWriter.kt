@@ -111,20 +111,24 @@ internal class StringifiedNbtWriter(private val builder: Appendable, private val
         builder.append(value.toString()).append(if (inArray) TYPE_BYTE_ARRAY else TYPE_BYTE)
     }
 
-    override fun writeShort(value: Short) {
-        builder.append(value.toString()).append(TYPE_SHORT)
-    }
-
-    override fun writeInt(value: Int) {
-        builder.append(value.toString())
-    }
-
     override fun writeLong(value: Long) {
         builder.append(value.toString()).append(TYPE_LONG)
     }
 
+    override fun writeShort(value: Short) {
+        if (builder is StringBuilder) (builder as StringBuilder).append(value) else builder.append(value.toString())
+        builder.append(TYPE_SHORT)
+    }
+
+    override fun writeInt(value: Int) {
+        if (builder is StringBuilder) (builder as StringBuilder).append(value) else builder.append(value.toString())
+    }
+
+
+
     override fun writeFloat(value: Float) {
-        builder.append(value.toString()).append(TYPE_FLOAT)
+        if (builder is StringBuilder) (builder as StringBuilder).append(value) else builder.append(value.toString())
+        builder.append(TYPE_FLOAT)
     }
 
     override fun writeDouble(value: Double) {

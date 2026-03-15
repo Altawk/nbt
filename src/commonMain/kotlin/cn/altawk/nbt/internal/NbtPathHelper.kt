@@ -14,11 +14,11 @@ internal object NbtPathHelper {
     @JvmStatic
     fun fromString(path: String) = buildList {
         val buf = CharBuffer(path)
-        var name = ""
+        val nameBuilder = StringBuilder()
         fun release() {
-            if (name.isNotEmpty()) {
-                add(NameNode(name))
-                name = ""
+            if (nameBuilder.isNotEmpty()) {
+                add(NameNode(nameBuilder.toString()))
+                nameBuilder.setLength(0)
             }
         }
         while (buf.hasMore()) {
@@ -40,7 +40,7 @@ internal object NbtPathHelper {
                     buf.advance()
                 }
 
-                else -> name += buf.take() // Add to cache
+                else -> nameBuilder.append(buf.take()) // Add to cache
             }
         }
         release() // release the last name

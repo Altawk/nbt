@@ -85,10 +85,8 @@ internal class CharBuffer(private val sequence: CharSequence) {
         if (!this.hasMore()) {
             this.makeError("Expected character '$expectedChar' but got EOF")
         }
-        if (
-            (ignoreCase && this.peek().lowercaseChar() != expectedChar.lowercaseChar())
-            || this.peek() != expectedChar
-        ) {
+        val ok = if (ignoreCase) this.peek().equals(expectedChar, ignoreCase = true) else this.peek() == expectedChar
+        if (!ok) {
             this.makeError("Expected character '" + expectedChar + "' but got '" + this.peek() + "'")
         }
         this.take()
